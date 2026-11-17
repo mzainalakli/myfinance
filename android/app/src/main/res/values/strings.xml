@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nama tampilan (tempat 1 dari 3; lihat docs/GANTI_NAMA.md). app_id dibuat dari build.gradle.kts. -->
+    <string name="app_name">MyFinance</string>
+    <string name="widget_description">Catat pemasukan/pengeluaran dengan sekali ketuk</string>
+    <string name="widget_expense_fmt">Keluar %1$s</string>
+    <string name="widget_income_fmt">Masuk %1$s</string>
+    <string name="widget_none">0</string>
+    <string name="widget_btn_expense">+ Keluar</string>
+    <string name="widget_btn_income">+ Masuk</string>
+    <string name="widget_today">Hari ini</string>
+    <string name="shortcut_expense_short">Catat pengeluaran</string>
+    <string name="shortcut_expense_long">Catat pengeluaran</string>
+    <string name="shortcut_income_short">Catat pemasukan</string>
+    <string name="shortcut_income_long">Catat pemasukan</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_bg">#1B2422</color>
+    <color name="widget_fg">#E3EAE8</color>
+    <color name="widget_fg_secondary">#A4B0AD</color>
+    <color name="btn_expense_bg">#C62828</color>
+    <color name="btn_income_bg">#2E7D32</color>
+    <color name="btn_fg">#FFFFFF</color>
+</resources>
