@@ -1,0 +1,71 @@
+# Update terkini: MyFinance
+
+Ringkasan kondisi aplikasi saat dokumen ini ditulis (18 Nov 2026).
+Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `../DECISIONS.md` (keputusan desain).
+
+## Status per fase
+
+| Fase | Isi | Status |
+|---|---|---|
+| 1. Fondasi | Proyek, tema + token, drift + migrasi, `Money`, repository, tes | Kode selesai, `analyze` dan tes lolos |
+| 2. Catat + riwayat | Sheet catat + numpad, riwayat, edit/hapus/undo, pengaturan | Kode selesai, `analyze` lolos |
+| 3. Filter + rekap + statistik | Filter gabungan, rekap per mata uang, 3 grafik, CSV | Kode selesai, `analyze` dan tes lolos |
+| 4. Widget + popup + shortcut | `QuickAddActivity`, widget 2 layout, shortcuts | Kode selesai, terkompilasi; **belum diuji di perangkat** |
+| 5. Actions + rilis | `release.yml`, penandatanganan, dokumen | Berkas selesai, **belum dijalankan di GitHub** |
+| 6. Pemolesan | Uji layar, ukuran APK, mode gelap, 10.000 transaksi | Hanya uji 10.000 transaksi (otomatis) dan cek izin/ukuran APK |
+
+## Build (terverifikasi 18 Nov 2026)
+
+- `flutter build apk --debug`: **berhasil**.
+- `flutter build apk --release --split-per-abi`: **berhasil** (R8 + shrinkResources aktif; ditandatangani debug
+  karena `key.properties` tidak ada, sesuai rencana untuk build lokal).
+  arm64-v8a 23,9 MB, armeabi-v7a 21,6 MB, x86_64 25,4 MB.
+- Manifest APK rilis: **tanpa izin `INTERNET`**. Izin yang ada berasal dari plugin `home_widget` (WorkManager):
+  `WAKE_LOCK`, `ACCESS_NETWORK_STATE`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE`.
+- `applicationId` `app.myfinance`, label `MyFinance`, targetSdk 36.
+- Peringatan build: `home_widget` memakai Kotlin Gradle Plugin lama (hanya peringatan, bukan galat).
+
+## Yang belum terverifikasi
+
+- Belum ada uji di perangkat/emulator: popup, widget, shortcut, tampilan 360x640, mode gelap, tablet,
+  dan "tiga ketukan" dari widget. Kode Kotlin sudah terkompilasi, tetapi perilakunya belum dilihat.
+- Ukuran APK (±24 MB) belum dianalisis; kemungkinan besar mesin Flutter + SQLite + font. Belum dicari penghematan.
+- Workflow GitHub belum pernah berjalan; secret keystore belum diisi.
+- Kinerja scroll daftar 10.000 baris di HP belum diukur.
+
+## Hasil tes otomatis (`flutter test`: 34 lolos)
+
+- `money_test`: format, parse, desimal per mata uang (IDR 0, USD 2, KWD 3), bolak-balik tanpa kehilangan presisi.
+- `data_test`: seed/migrasi, filter gabungan, kata kunci (`%`, `_` literal), arsip kategori, urutan frekuensi, hapus + urungkan, rekap per mata uang.
+- `stats_csv_test`: rincian kategori, batang bulanan, tren kumulatif, CSV (escape, anti injeksi rumus).
+- `performance_test`: 10.000 transaksi di SQLite memori (mode JIT): ambil semua baris ±160 ms,
+  hitung statistik ±210 ms, filter kata kunci ±6 ms. Ini bukan ukuran di HP; kinerja daftar (scroll) belum diuji.
+- Catatan: `schemaVersion` masih 1, jadi tes migrasi baru mencakup pembuatan awal + buka ulang, belum jalur `onUpgrade`.
+
+## Penamaan (sesuai aturan terbaru)
+
+- Nama tampilan **MyFinance** ada di 3 tempat: `res/values/strings.xml` (`app_name`), `lib/core/app_config.dart`
+  (`AppConfig.appName`), `env.APP_FILE` di `release.yml`.
+- `applicationId` = `app.myfinance`, paket Dart/Kotlin = `myfinance`. Tetap, jangan diubah.
+- `docs/GANTI_NAMA.md` sudah ditulis.
+
+## Fitur yang sudah ada di kode
+
+- Catat: toggle Keluar/Masuk, chip kategori urut frekuensi, catatan, nominal + mata uang, Simpan di atas numpad kustom
+  (ikon kalender kecil di baris catatan untuk tanggal; lihat DECISIONS).
+- Beranda (ringkasan bulan ini per mata uang, 5 terbaru), Riwayat (per hari, geser ubah/hapus, undo),
+  Statistik (donat, batang, garis), filter bottom sheet + chip periode, ekspor CSV (filter/semua).
+- Pengaturan: mata uang/jenis default, tema, format angka; kelola kategori (tambah, ubah, urut, arsip).
+- Android: popup transparan `QuickAddActivity` (entrypoint `quickAddMain`), widget `+ Keluar` / `+ Masuk` + total hari ini,
+  shortcut tekan-lama, DB bersama (WAL + `busy_timeout`), R8 minify + shrinkResources di rilis.
+
+## Belum dikerjakan (pasca-MVP, sesuai spesifikasi)
+
+Template transaksi + widget sekali ketuk, backup/restore JSON, kurs manual, anggaran per kategori.
+Tabel `templates` sudah ada di skema.
+
+## Langkah berikutnya
+
+1. Coba di emulator/HP: popup, widget, shortcut, 360x640, mode gelap; ukur scroll 10.000 baris.
+2. Periksa ukuran APK.
+3. Buat keystore + secret (lihat `RILIS.md`), push ke `main`, pastikan tag `vX.Y.Z.N` dan 3 APK terbentuk.
