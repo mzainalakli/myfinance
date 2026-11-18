@@ -32,7 +32,9 @@ else
   fi
   command -v keytool >/dev/null || { echo "keytool tidak ditemukan (pasang JDK)." >&2; exit 1; }
   # password acak (alfanumerik; aman untuk key.properties). Tidak dicetak.
-  PASS="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
+  # (hindari `tr </dev/urandom | head`: SIGPIPE + pipefail menghentikan skrip diam-diam)
+  PASS="$(head -c 96 /dev/urandom | base64 -w0 | tr -dc 'A-Za-z0-9' | cut -c1-32)"
+  [ "${#PASS}" -eq 32 ] || { echo "Gagal membuat password acak." >&2; exit 1; }
   export PASS
   printf '%s' "$PASS" > "$DIR/password.txt"
   printf '%s' "$ALIAS_NAME" > "$DIR/alias.txt"
