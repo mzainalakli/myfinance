@@ -158,6 +158,9 @@ const List<Currency> allCurrencies = [
 
 final Map<String, Currency> _byCode = {for (final c in allCurrencies) c.code: c};
 
+/// Mata uang dari daftar ISO 4217 yang dibundel; null bila kode tidak dikenal.
+Currency? findCurrency(String code) => _byCode[code];
+
 /// Cari mata uang menurut kode; kode tak dikenal jatuh ke 2 desimal.
 Currency currencyByCode(String code) =>
     _byCode[code] ?? Currency(code, code, 2, code);

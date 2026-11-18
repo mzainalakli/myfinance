@@ -4,45 +4,38 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/app_config.dart';
-import '../../../core/util/format.dart';
-import '../../../core/util/dates.dart';
+import '../../../core/csv/transaction_csv.dart';
 import 'summary.dart';
 
-String _esc(String v) {
-  // Cegah injeksi rumus saat dibuka di spreadsheet.
-  var s = v;
-  if (s.isNotEmpty && '=+-@\t\r'.contains(s[0])) s = "'$s";
-  if (s.contains(RegExp('[",\n\r]'))) s = '"${s.replaceAll('"', '""')}"';
-  return s;
-}
+/// Baris DB -> bentuk netral CSV (format didefinisikan di core/csv/transaction_csv.dart).
+TxCsvRecord toCsvRecord(TxRow r) => TxCsvRecord(
+      occurredAt: DateTime.fromMillisecondsSinceEpoch(r.tx.occurredAt, isUtc: true),
+      type: r.tx.type,
+      category: r.category.name,
+      amountMinor: r.tx.amountMinor,
+      currency: r.money.currency,
+      note: r.tx.note,
+      icon: r.category.icon,
+      color: r.category.color,
+    );
 
-/// CSV: tanggal (ISO lokal), jenis, kategori, nominal (titik desimal), mata uang, catatan.
-String buildCsv(List<TxRow> rows) {
-  final b = StringBuffer('Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan\r\n');
-  for (final r in rows) {
-    final d = fromEpochMs(r.tx.occurredAt);
-    final date =
-        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} ${timeLabel(d).replaceAll('.', ':')}';
-    b.write([
-      date,
-      r.isIncome ? 'Masuk' : 'Keluar',
-      _esc(r.category.name),
-      r.money.toPlainString(),
-      r.tx.currencyCode,
-      _esc(r.tx.note),
-    ].join(','));
-    b.write('\r\n');
-  }
-  return b.toString();
-}
+String buildCsv(List<TxRow> rows) => encodeTransactions(rows.map(toCsvRecord));
 
-Future<void> shareCsv(List<TxRow> rows) async {
+/// Berkas CSV dengan BOM UTF-8 agar Excel membaca benar (pembaca impor membuang BOM).
+String withBom(String csv) => '﻿$csv';
+
+String _stamp(DateTime n) =>
+    '${n.year}${n.month.toString().padLeft(2, '0')}${n.day.toString().padLeft(2, '0')}';
+
+Future<void> shareCsvText(String csv, String fileName) async {
   final dir = await getTemporaryDirectory();
-  final n = DateTime.now();
-  final name =
-      '${AppConfig.filePrefix}-${n.year}${n.month.toString().padLeft(2, '0')}${n.day.toString().padLeft(2, '0')}.csv';
-  final f = File('${dir.path}/$name');
-  // BOM agar Excel membaca UTF-8 dengan benar.
-  await f.writeAsString('﻿${buildCsv(rows)}');
-  await SharePlus.instance.share(ShareParams(files: [XFile(f.path, mimeType: 'text/csv')], subject: name));
+  final f = File('${dir.path}/$fileName');
+  await f.writeAsString(withBom(csv));
+  await SharePlus.instance.share(ShareParams(files: [XFile(f.path, mimeType: 'text/csv')], subject: fileName));
 }
+
+Future<void> shareCsv(List<TxRow> rows) =>
+    shareCsvText(buildCsv(rows), '${AppConfig.filePrefix}-${_stamp(DateTime.now())}.csv');
+
+Future<void> shareCsvTemplate() =>
+    shareCsvText(encodeTemplate(), '${AppConfig.filePrefix}-template.csv');

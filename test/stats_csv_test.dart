@@ -3,6 +3,7 @@ import 'package:myfinance/core/money/currencies.dart';
 import 'package:myfinance/core/money/money.dart';
 import 'package:myfinance/core/util/dates.dart';
 import 'package:myfinance/features/stats/stats_calculator.dart';
+import 'package:myfinance/core/csv/transaction_csv.dart';
 import 'package:myfinance/features/transactions/data/csv_export.dart';
 import 'package:myfinance/features/transactions/data/summary.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,19 +58,22 @@ void main() {
 
   group('CSV', () {
     test('header, format nominal polos, kutip dan escape', () {
+      final when = DateTime(2026, 11, 18, 8, 5, 7, 123);
       final csv = buildCsv([
-        row(1, TxType.expense, 1250, 'USD', DateTime(2026, 11, 18, 8, 5), note: 'kopi, "enak"'),
+        row(1, TxType.expense, 1250, 'USD', when, note: 'kopi, "enak"'),
         row(2, TxType.income, 5000000, 'IDR', DateTime(2026, 11, 1, 9), catName: 'Gaji'),
       ]);
       final lines = csv.trim().split('\r\n');
-      expect(lines[0], 'Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan');
-      expect(lines[1], '2026-11-18 08:05,Keluar,Makan,12.50,USD,"kopi, ""enak"""');
-      expect(lines[2], '2026-11-01 09:00,Masuk,Gaji,5000000,IDR,');
+      expect(lines[0], 'Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna');
+      expect(lines[1], '${formatCsvDate(when)},Keluar,Makan,12.50,USD,"kopi, ""enak""",more,#000000');
+      expect(lines[1], startsWith('2026-11-18T08:05:07.123'));
+      expect(lines[2], startsWith('2026-11-01T09:00:00.000'));
+      expect(lines[2], endsWith(',Masuk,Gaji,5000000,IDR,,more,#000000'));
     });
 
     test('mencegah injeksi rumus', () {
       final csv = buildCsv([row(1, TxType.expense, 100, 'IDR', DateTime(2026, 1, 1), note: '=1+1')]);
-      expect(csv, contains(",'=1+1"));
+      expect(csv, contains(",'=1+1,"));
     });
   });
 
