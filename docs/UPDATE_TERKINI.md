@@ -54,6 +54,15 @@ Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `..
 splash Android 12+ dan mode gelap, perilaku widget (topeng muncul/hilang saat ikon mata diketuk, rendering topeng di
 widget kecil), numpad di layar kecil (tombol koma, 4 tombol terakhir), pembaca layar (TalkBack), dan fade 150 ms.
 
+## Rilis otomatis (GitHub Actions)
+
+- Run hijau pertama: **`v1.0.0.2`** (run #1 dari commit awal gagal sebelum workflow dirapikan). Release berstatus Latest,
+  3 APK: `myfinance-v1.0.0.2-{arm64-v8a,armeabi-v7a,x86_64}.apk` (24,2 / 21,9 / 25,7 MB).
+- APK `arm64-v8a` diunduh dari Release dan diperiksa: `apksigner verify` lolos, sertifikat `CN=MyFinance` (bukan debug),
+  package `app.myfinance`, versionName 1.0.0, tanpa izin INTERNET. Tidak ada keystore/`key.properties` di repo;
+  password tidak ditemukan di log run.
+- Keystore + password di `~/myfinance-signing` (di luar repo). **Belum dicadangkan di luar komputer ini.**
+
 ## Hasil tes otomatis (`flutter test`: 70 lolos)
 
 - `money_test`: format, parse, desimal per mata uang (IDR 0, USD 2, KWD 3), bolak-balik tanpa kehilangan presisi.
