@@ -4,9 +4,14 @@
   hanya di 3 tempat (`strings.xml`, `AppConfig.appName`, `env.APP_FILE`). Lihat `docs/GANTI_NAMA.md`.
   Nama file DB (`myfinance.db`) dan kelas widget juga netral dan tidak ikut diganti.
 - **Waktu**: `occurred_at`, `created_at`, `updated_at` = UTC epoch **milidetik** (integer). Pengelompokan hari memakai waktu lokal.
-- **Numpad**: nominal = integer satuan terkecil. Tiap angka digeser masuk dari kanan (gaya mesin kasir):
-  IDR/JPY mengetik rupiah/yen langsung; USD mengetik sen (1-2-5-0 → 12,50). Tombol `000` menambah tiga nol.
-  Batas maksimum `Money.maxMinor` agar aman di int 64-bit.
+- **Numpad / input nominal** (menggantikan gaya mesin kasir sebelumnya): `AmountInput` (state-machine murni di
+  `core/money/amount_input.dart`). Angka mengisi bagian bulat; desimal baru muncul setelah koma ditekan dan hanya
+  untuk mata uang berdesimal (USD maks 2 digit, KWD 3). Tombol koma hanya ada bila mata uang punya desimal; untuk
+  IDR/JPY slot itu diisi `000` (mata uang berdesimal tidak punya `000`, slotnya koma). `12,` tetap terlihat; simpan = 12,00.
+  Awalan nol tidak menumpuk; bagian bulat maks 12 digit (12 × KWD 3 desimal = tepat `Money.maxMinor`).
+  Ganti mata uang: bagian bulat dipertahankan, desimal berlebih dipotong. Konversi ke satuan terkecil tanpa double.
+  Penyebab keluhan "mengetik 10 jadi 0,10": entri gaya kasir untuk mata uang berdesimal. Penentuan desimal IDR (0) dan
+  default awal `IDR` sudah benar (diuji), jadi bukan bug di sumber desimal.
 - **Money & format angka**: format/parse buatan sendiri (bukan `NumberFormat`) agar deterministik dan teruji;
   gaya `1.234,56` (id) atau `1,234.56` (en) dipilih di Pengaturan. Simbol dipisah NBSP.
 - **Rekap**: `summarize()` selalu mengelompokkan per kode mata uang; `Money +` melempar galat bila beda mata uang.

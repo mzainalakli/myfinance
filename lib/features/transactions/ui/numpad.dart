@@ -6,12 +6,18 @@ import '../../../core/theme/tokens.dart';
 /// Numpad kustom: 1-9, 000, 0, hapus. Tidak memunculkan keyboard sistem.
 class Numpad extends StatelessWidget {
   final void Function(String digits) onDigits;
+  final VoidCallback onComma;
+
+  /// Tombol koma hanya untuk mata uang yang punya desimal; selain itu diganti `000`.
+  final bool showComma;
   final VoidCallback onDelete;
   final VoidCallback onClear;
   final double keyHeight;
   const Numpad({
     super.key,
     required this.onDigits,
+    required this.onComma,
+    required this.showComma,
     required this.onDelete,
     required this.onClear,
     this.keyHeight = Tk.touch,
@@ -52,7 +58,7 @@ class Numpad extends StatelessWidget {
       row(['4', '5', '6']),
       row(['7', '8', '9']),
       Row(children: [
-        key('000', onTap: () => onDigits('000')),
+        if (showComma) key(',', onTap: onComma) else key('000', onTap: () => onDigits('000')),
         key('0', onTap: () => onDigits('0')),
         key('', child: const Icon(Icons.backspace_outlined), onTap: onDelete, onLong: onClear),
       ]),

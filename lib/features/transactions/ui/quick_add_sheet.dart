@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/database.dart';
+import '../../../core/money/amount_input.dart';
 import '../../../core/money/currencies.dart';
-import '../../../core/money/money.dart';
 import '../../../core/providers.dart';
 import '../../../core/strings.dart';
 import '../../../core/theme/tokens.dart';
@@ -47,7 +47,7 @@ class QuickAddSheet extends ConsumerStatefulWidget {
 class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   late TxType type;
   int? categoryId;
-  int amount = 0;
+  late AmountInput input;
   late String currencyCode;
   late DateTime date;
   final note = TextEditingController();
@@ -62,13 +62,14 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
     if (e != null) {
       type = e.tx.type;
       categoryId = e.tx.categoryId;
-      amount = e.tx.amountMinor;
       currencyCode = e.tx.currencyCode;
+      input = AmountInput.fromMinor(e.tx.amountMinor, currencyByCode(currencyCode).decimals);
       date = fromEpochMs(e.tx.occurredAt);
       note.text = e.tx.note;
     } else {
       type = widget.initialType ?? s.defaultType;
       currencyCode = s.defaultCurrency;
+      input = AmountInput.empty(currencyByCode(currencyCode).decimals);
       date = DateTime.now();
     }
     noteFocus.addListener(() => setState(() {}));
@@ -81,20 +82,11 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
     super.dispose();
   }
 
-  void _digits(String d) {
-    var v = amount;
-    for (final ch in d.split('')) {
-      v = v * 10 + int.parse(ch);
-      if (v > Money.maxMinor) return;
-    }
-    setState(() => amount = v);
-  }
-
   Future<void> _save(int? effectiveCategory) async {
-    if (saving || amount <= 0 || effectiveCategory == null) return;
+    if (saving || input.isZero || effectiveCategory == null) return;
     setState(() => saving = true);
     final repo = ref.read(repoProvider);
-    final money = Money(amount, currencyByCode(currencyCode));
+    final money = input.toMoney(currencyByCode(currencyCode));
     final e = widget.editing;
     if (e == null) {
       final now = DateTime.now();
@@ -143,7 +135,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
       cats = [e.category, ...cats]; // kategori terarsip tetap tampil saat mengubah
     }
     final effective = cats.any((c) => c.id == categoryId) ? categoryId : (cats.isEmpty ? null : cats.first.id);
-    final canSave = amount > 0 && effective != null && !saving;
+    final canSave = !input.isZero && effective != null && !saving;
 
     final avail = mq.size.height - mq.padding.top - kb - 8;
     final height = math.min(avail, 720.0);
@@ -228,9 +220,9 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              Money(amount, cur).formatNumber(style: style),
+              input.display(style),
               style: tt.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w700, color: amount == 0 ? cs.outline : accent),
+                  fontWeight: FontWeight.w700, color: input.isEmpty ? cs.outline : accent),
             ),
           ),
         ),
@@ -241,7 +233,12 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
             final used = ref.read(usedCurrenciesProvider).value ?? const <String>[];
             final c = await showCurrencyPicker(context,
                 selected: currencyCode, pinned: [ref.read(settingsProvider).defaultCurrency, ...used]);
-            if (c != null) setState(() => currencyCode = c.code);
+            if (c != null) {
+              setState(() {
+                currencyCode = c.code;
+                input = input.withDecimals(c.decimals);
+              });
+            }
           },
         ),
       ]),
@@ -270,9 +267,11 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Tk.s12),
               child: Numpad(
-                onDigits: _digits,
-                onDelete: () => setState(() => amount ~/= 10),
-                onClear: () => setState(() => amount = 0),
+                showComma: cur.decimals > 0,
+                onDigits: (d) => setState(() => input = input.digits(d)),
+                onComma: () => setState(() => input = input.comma()),
+                onDelete: () => setState(() => input = input.backspace()),
+                onClear: () => setState(() => input = input.clear()),
               ),
             ),
           SizedBox(height: bottomSafe + Tk.s8),
