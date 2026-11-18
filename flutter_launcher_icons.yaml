@@ -1,0 +1,9 @@
+# Bangkitkan ikon:  dart run flutter_launcher_icons   (lihat docs/GANTI_LOGO.md)
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: false
+  image_path: "assets/branding/icon.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "assets/branding/icon_background.png"
+  adaptive_icon_foreground: "assets/branding/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/branding/icon_monochrome.png"

@@ -6,4 +6,5 @@
     <color name="btn_expense_bg">#B91C1C</color>
     <color name="btn_income_bg">#15803D</color>
     <color name="btn_fg">#FFFFFF</color>
+    <color name="splash_bg">#F5FAF8</color>
 </resources>

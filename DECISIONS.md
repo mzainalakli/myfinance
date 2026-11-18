@@ -33,3 +33,8 @@
   `sqlite3_flutter_libs` tidak dipakai (EOL); `sqlite3` v3 membundel SQLite lewat build hook.
 - **Font**: Inter Regular/Medium/Bold dibundel (lisensi OFL di `assets/fonts`).
 - **Tidak ada izin INTERNET** di manifest utama (hanya manifest debug/profile bawaan Flutter yang punya, untuk hot reload).
+- **Logo** (Perbaikan 2): logo asli (koin putih + panah naik, tanpa teks) di `assets/branding/`; adaptive icon
+  (background gradien, foreground, monokrom) lewat `flutter_launcher_icons` (dev dependency). `tool/make_icons.sh`
+  = satu perintah (ikon + `ic_launcher_round` bulat). Foreground sengaja dibuat ±88% kanvas karena paket memberi inset 16%
+  (simbol akhir ±60% kanvas adaptive, di dalam area aman 66%). Splash: latar polos `splash_bg` terang/gelap, Android 12+
+  memakai ikon aplikasi. Pratinjau widget memakai `@mipmap/ic_launcher`. Lihat `docs/GANTI_LOGO.md`.
