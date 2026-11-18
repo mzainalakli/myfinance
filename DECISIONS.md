@@ -47,3 +47,15 @@
   `main()` (aplikasi utama saja) dengan menulis status ke prefs, supaya popup/widget konsisten dengan status efektif.
   "Sembunyikan nominal di riwayat" = nominal riwayat bertopeng hanya bila opsi aktif **dan** saldo sedang tersembunyi
   (ikon mata tetap saklar utama; lembar ubah transaksi selalu menampilkan angka). CSV tidak terpengaruh.
+- **Impor CSV**: format ekspor/impor didefinisikan satu kali di `core/csv/transaction_csv.dart`.
+  **Format ekspor diubah ke v2** karena v1 lossy: tanggal `yyyy-MM-dd HH:mm` lokal tanpa detik/zona tidak bisa dipulihkan ke
+  detik yang sama. v2 = ISO 8601 lokal + milidetik + offset, plus kolom opsional Ikon/Warna. v1 tetap terbaca (header dikenali
+  lewat nama; tanggal tanpa zona = waktu lokal perangkat).
+  Pelindung formula-injection dibuat bolak-balik persis: awalan `'` ditambahkan bila sel (setelah nol atau lebih `'`) diawali
+  `= + - @ TAB CR`, dan dibuang tepat satu kali saat impor (v1 ambigu untuk catatan yang memang diawali `'`).
+  **Deduplikasi** = multiset atas (waktu, jenis, nominal, mata uang, kategori, catatan): n kembar di berkas dan m di DB
+  -> tambah max(0, n-m). Baris dari berkas v1 (tanpa detik) dicocokkan per menit. Nominal dengan desimal berlebih = galat
+  (sisa nol seperti `10.00` untuk IDR diterima karena tidak membulatkan). Mode **Ganti semua** menghapus transaksi saja
+  (kategori, templates, pengaturan tetap) dan menulis cadangan CSV ke `<support dir>/backups/` sebelum menghapus.
+  Penulisan dalam satu transaksi drift (rollback penuh bila gagal, termasuk kategori baru). `created_at/updated_at` = waktu impor.
+  Tanpa perubahan skema DB. Pemilih file: `file_picker` (SAF, tanpa izin penyimpanan); parsing di isolate (`compute`).

@@ -22,6 +22,13 @@ Catatan: bila sebelumnya memasang APK debug/uji, aplikasi itu harus di-uninstall
   Chip periode dan tombol filter ada di bawah. Ikon bagikan di atas mengekspor CSV sesuai filter.
 - **Statistik**: donat per kategori, batang per bulan, tren selisih. Mengikuti filter yang sama; per satu mata uang.
 - **Pengaturan** (ikon di Beranda): mata uang/jenis default, tema, format angka, kelola kategori, ekspor semua.
+- **Ekspor lalu impor CSV**: Riwayat (ikon bagikan, sesuai filter) atau Pengaturan → *Ekspor semua data* menghasilkan
+  berkas CSV. Pengaturan → *Impor data (CSV)* membaca berkas itu kembali: pilih berkas → pratinjau (jumlah valid, duplikat,
+  baris bermasalah, kategori baru, total per mata uang) → pilih mode → Impor. Tersedia juga template CSV kosong.
+  - **Gabungkan** (default): menambah yang belum ada dan melewati duplikat, jadi mengimpor berkas yang sama dua kali aman.
+  - **Ganti semua**: menghapus semua transaksi sekarang lalu mengisi dari berkas. Cadangan CSV data sekarang dibuat otomatis
+    lebih dulu (bisa dibagikan). Pakai ini untuk memulihkan di HP baru.
+  Format: `docs/FORMAT_CSV.md`.
 - Rekap selalu terpisah per mata uang; tidak ada konversi kurs.
 
 ## Membangun

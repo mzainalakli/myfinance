@@ -8,6 +8,7 @@ import 'core/providers.dart';
 import 'core/strings.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/categories_page.dart';
+import 'features/settings/import_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/transactions/ui/history_page.dart';
@@ -35,7 +36,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (_, _) => const SettingsPage(),
-      routes: [GoRoute(path: 'categories', builder: (_, _) => const CategoriesPage())],
+      routes: [
+        GoRoute(path: 'categories', builder: (_, _) => const CategoriesPage()),
+        GoRoute(path: 'import', builder: (_, _) => const ImportPage()),
+      ],
     ),
   ],
 );

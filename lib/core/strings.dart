@@ -74,4 +74,41 @@ class S {
   static const hideHistory = 'Sembunyikan nominal di riwayat';
   static const hideHistoryHint = 'Ikut ikon mata; nominal tampil lagi saat item dibuka untuk diubah';
   static const privacy = 'Privasi';
+  static const importData = 'Impor data (CSV)';
+  static const importTitle = 'Impor data';
+  static const importIntro =
+      'Pulihkan atau gabungkan transaksi dari berkas CSV hasil ekspor aplikasi ini (atau yang mengikuti format yang sama).';
+  static const pickCsv = 'Pilih file CSV';
+  static const shareTemplate = 'Bagikan template CSV kosong';
+  static const reading = 'Membaca berkas…';
+  static const writing = 'Menulis ke database…';
+  static const dontLeave = 'Impor sedang berjalan, tunggu sampai selesai.';
+  static const previewTitle = 'Pratinjau';
+  static const validRows = 'Baris valid';
+  static const willAdd = 'Akan ditambahkan';
+  static const dupSkipped = 'Duplikat dilewati';
+  static const errorRows = 'Baris bermasalah';
+  static const newCategoriesLabel = 'Kategori baru';
+  static const dateRangeLabel = 'Rentang tanggal';
+  static const totalsPerCurrency = 'Total per mata uang';
+  static const modeMerge = 'Gabungkan';
+  static const modeReplace = 'Ganti semua';
+  static const modeMergeHint = 'Tambahkan yang belum ada, lewati duplikat. Data sekarang tidak diubah.';
+  static const modeReplaceHint =
+      'Hapus semua transaksi sekarang lalu isi dari berkas. Cadangan CSV data sekarang dibuat otomatis lebih dulu.';
+  static const none = 'tidak ada';
+  static const showErrors = 'Lihat daftar';
+  static const importAction = 'Impor';
+  static const nothingNew = 'Tidak ada transaksi baru untuk diimpor';
+  static const confirmReplaceTitle = 'Ganti semua data?';
+  static const importDone = 'Impor selesai';
+  static const added = 'ditambahkan';
+  static const skipped = 'dilewati';
+  static const failed = 'gagal';
+  static const backupSaved = 'Cadangan data sebelumnya disimpan di penyimpanan privat aplikasi.';
+  static const shareBackup = 'Bagikan cadangan';
+  static const retry = 'Pilih berkas lain';
+  static const fileError = 'Berkas tidak bisa diimpor';
+  static const readFail = 'Berkas tidak bisa dibaca.';
+  static const moreErrors = 'dan lainnya tidak ditampilkan';
 }

@@ -63,13 +63,28 @@ widget kecil), numpad di layar kecil (tombol koma, 4 tombol terakhir), pembaca l
   password tidak ditemukan di log run.
 - Keystore + password di `~/myfinance-signing` (di luar repo). **Belum dicadangkan di luar komputer ini.**
 
-## Hasil tes otomatis (`flutter test`: 70 lolos)
+## Fitur: Impor CSV
+
+- Pengaturan → **Impor data (CSV)**: pilih berkas → pratinjau → mode **Gabungkan** / **Ganti semua** → hasil. Template CSV kosong dapat dibagikan.
+- Format ekspor dinaikkan ke **v2** (ISO 8601 + milidetik + offset, kolom Ikon/Warna); v1 tetap bisa diimpor. Kontrak: `docs/FORMAT_CSV.md`.
+- Tes otomatis: round-trip semua kolom (catatan berisi koma/kutip/baris baru/emoji/awalan `= + - @ '`, USD+IDR+JPY, nominal
+  maksimum, sekitar pergantian hari), impor dua kali tanpa data ganda, tumpang tindih sebagian, kembar tetap dua, berkas v1,
+  variasi berkas (BOM, `;`, CRLF, kolom acak/tambahan), galat per baris, mode Ganti semua (cadangan + rollback atomik).
+- Kinerja (tes, mode JIT, DB memori, 10.000 baris): ekspor 345 ms, parse 344 ms, pratinjau 54 ms, tulis 186 ms, deteksi
+  10.000 duplikat 211 ms. Di aplikasi, parsing berjalan di isolate.
+- **Belum diverifikasi di HP:** alur pemilih file sistem (termasuk berkas dari Drive/Download), tampilan layar pratinjau dan
+  daftar galat, dialog konfirmasi, kecepatan pada berkas besar di perangkat nyata, berbagi cadangan/template, dan pembacaan
+  berkas hasil Excel/Sheets di HP. Layar impor belum punya tes widget (logika-nya diuji, UI belum).
+
+## Hasil tes otomatis (`flutter test`: 116 lolos)
 
 - `money_test`: format, parse, desimal per mata uang (IDR 0, USD 2, KWD 3), bolak-balik tanpa kehilangan presisi.
 - `data_test`: seed/migrasi, filter gabungan, kata kunci (`%`, `_` literal), arsip kategori, urutan frekuensi, hapus + urungkan, rekap per mata uang.
 - `stats_csv_test`: rincian kategori, batang bulanan, tren kumulatif, CSV (escape, anti injeksi rumus).
 - `amount_input_test`: input nominal IDR/USD/JPY/KWD, batas, ganti mata uang.
 - `privacy_test`: topeng, persistensi status, payload widget, `MoneyText`.
+- `transaction_csv_test`: pembaca/penulis CSV, variasi berkas, galat, kompatibilitas v1.
+- `import_service_test`: round-trip, dedup, pratinjau, mode Ganti semua, atomik, kinerja 10.000 baris.
 - `performance_test`: 10.000 transaksi di SQLite memori (mode JIT): ambil semua baris ±160 ms,
   hitung statistik ±210 ms, filter kata kunci ±6 ms. Ini bukan ukuran di HP; kinerja daftar (scroll) belum diuji.
 - Catatan: `schemaVersion` masih 1, jadi tes migrasi baru mencakup pembuatan awal + buka ulang, belum jalur `onUpgrade`.

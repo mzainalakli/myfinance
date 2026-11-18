@@ -124,6 +124,13 @@ class SettingsPage extends ConsumerWidget {
                 await shareCsv(rows);
               },
             ),
+            ListTile(
+              minTileHeight: Tk.touch,
+              leading: const Icon(Icons.file_download_outlined),
+              title: const Text(S.importData),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/import'),
+            ),
             Padding(
               padding: const EdgeInsets.all(Tk.s16),
               child: Text(S.about, style: tt.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),

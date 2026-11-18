@@ -104,6 +104,11 @@ class Repository {
   Future<void> restoreTransaction(Transaction t) =>
       db.into(db.transactions).insert(t, mode: InsertMode.insertOrReplace);
 
+  Future<int> countTransactions() async {
+    final c = db.transactions.id.count();
+    return (await (db.selectOnly(db.transactions)..addColumns([c])).map((r) => r.read(c)).getSingle()) ?? 0;
+  }
+
   // ---------- kategori ----------
 
   Stream<List<Category>> watchCategories(TxType type, {bool includeArchived = false}) {
