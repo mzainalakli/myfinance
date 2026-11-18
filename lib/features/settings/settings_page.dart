@@ -90,6 +90,19 @@ class SettingsPage extends ConsumerWidget {
               ),
             ),
             const Divider(),
+            SwitchListTile(
+              title: const Text(S.hideOnStart),
+              subtitle: const Text(S.hideOnStartHint),
+              value: s.hideOnStart,
+              onChanged: n.setHideOnStart,
+            ),
+            SwitchListTile(
+              title: const Text(S.hideHistory),
+              subtitle: const Text(S.hideHistoryHint),
+              value: s.hideHistoryAmounts,
+              onChanged: n.setHideHistoryAmounts,
+            ),
+            const Divider(),
             ListTile(
               minTileHeight: Tk.touch,
               leading: const Icon(Icons.category_outlined),

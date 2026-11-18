@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/money/money.dart';
 import '../../../core/providers.dart';
 import '../../../core/strings.dart';
 import '../../../core/theme/tokens.dart';
@@ -90,6 +91,40 @@ class SkeletonList extends StatelessWidget {
   }
 }
 
+/// Nominal dengan topeng saat [hidden]. Fade pendek; pembaca layar tidak membacakan angka saat tersembunyi.
+class MoneyText extends StatelessWidget {
+  final Money money;
+  final NumberStyle style;
+  final bool hidden;
+  final String prefix;
+  final TextStyle? textStyle;
+  const MoneyText(this.money,
+      {super.key, required this.style, required this.hidden, this.prefix = '', this.textStyle});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = hidden ? kMask : '$prefix${money.format(style: style)}';
+    Widget t = Text(text, key: ValueKey(hidden), style: textStyle, maxLines: 1);
+    if (hidden) t = Semantics(label: S.amountHidden, excludeSemantics: true, child: t);
+    return AnimatedSwitcher(duration: const Duration(milliseconds: 150), child: t);
+  }
+}
+
+/// Ikon mata (>= 48dp) untuk menampilkan/menyembunyikan saldo.
+class HideToggleButton extends ConsumerWidget {
+  const HideToggleButton({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(hiddenProvider);
+    return IconButton(
+      tooltip: hidden ? S.showBalance : S.hideBalance,
+      constraints: const BoxConstraints(minWidth: Tk.touch, minHeight: Tk.touch),
+      onPressed: () => ref.read(settingsProvider.notifier).toggleBalanceHidden(),
+      icon: Icon(hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+    );
+  }
+}
+
 class CategoryAvatar extends StatelessWidget {
   final String icon;
   final int color;
@@ -116,6 +151,7 @@ class TxTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final style = ref.watch(numberStyleProvider);
+    final hidden = ref.watch(historyHiddenProvider);
     final cs = Theme.of(context).colorScheme;
     final color = row.isIncome ? context.incomeColor : context.expenseColor;
     final dt = fromEpochMs(row.tx.occurredAt);
@@ -130,9 +166,12 @@ class TxTile extends ConsumerWidget {
       leading: CategoryAvatar(icon: row.category.icon, color: row.category.color),
       title: Text(row.category.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: cs.onSurfaceVariant)),
-      trailing: Text(
-        row.money.format(style: style, signed: true).replaceFirst('+', row.isIncome ? '+' : '-'),
-        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      trailing: MoneyText(
+        row.money,
+        style: style,
+        hidden: hidden,
+        prefix: row.isIncome ? '+' : '-',
+        textStyle: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -142,21 +181,28 @@ class TxTile extends ConsumerWidget {
 class SummaryCard extends ConsumerWidget {
   final List<CurrencyTotal> totals;
   final String? title;
-  const SummaryCard({super.key, required this.totals, this.title});
+
+  /// Tampilkan ikon mata di judul kartu dan izinkan ketuk angka untuk menyembunyikan (Beranda).
+  final bool showEye;
+  const SummaryCard({super.key, required this.totals, this.title, this.showEye = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final style = ref.watch(numberStyleProvider);
+    final hidden = ref.watch(hiddenProvider);
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
-    Widget cell(String label, String value, Color color) => Expanded(
+    Widget cell(String label, Money value, Color color) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 2),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(value, style: tt.titleSmall?.copyWith(color: color, fontWeight: FontWeight.w700)),
+              child: MoneyText(value,
+                  style: style,
+                  hidden: hidden,
+                  textStyle: tt.titleSmall?.copyWith(color: color, fontWeight: FontWeight.w700)),
             ),
           ]),
         );
@@ -165,7 +211,10 @@ class SummaryCard extends ConsumerWidget {
         padding: const EdgeInsets.all(Tk.s16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (title != null)
-            Text(title!, style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+            Row(children: [
+              Expanded(child: Text(title!, style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+              if (showEye) const HideToggleButton(),
+            ]),
           if (totals.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: Tk.s4),
@@ -174,16 +223,22 @@ class SummaryCard extends ConsumerWidget {
           for (var i = 0; i < totals.length; i++) ...[
             if (i > 0) const Divider(height: Tk.s24),
             if (title != null || i > 0) const SizedBox(height: Tk.s4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(totals[i].net.format(style: style),
-                  style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: showEye ? () => ref.read(settingsProvider.notifier).toggleBalanceHidden() : null,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: MoneyText(totals[i].net,
+                    style: style,
+                    hidden: hidden,
+                    textStyle: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+              ),
             ),
             const SizedBox(height: Tk.s8),
             Row(children: [
-              cell(S.income, totals[i].income.format(style: style), context.incomeColor),
-              cell(S.expense, totals[i].expense.format(style: style), context.expenseColor),
+              cell(S.income, totals[i].income, context.incomeColor),
+              cell(S.expense, totals[i].expense, context.expenseColor),
             ]),
           ],
         ]),

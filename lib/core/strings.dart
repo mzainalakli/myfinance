@@ -66,4 +66,12 @@ class S {
   static const about = 'Semua data tersimpan di perangkat ini. Tanpa akun, tanpa internet.';
   static const otherCurrencies = 'mata uang lain hari ini';
   static const total = 'Total';
+  static const showBalance = 'Tampilkan saldo';
+  static const hideBalance = 'Sembunyikan saldo';
+  static const amountHidden = 'Nominal disembunyikan';
+  static const hideOnStart = 'Sembunyikan saldo saat aplikasi dibuka';
+  static const hideOnStartHint = 'Aplikasi selalu mulai dalam keadaan tersembunyi';
+  static const hideHistory = 'Sembunyikan nominal di riwayat';
+  static const hideHistoryHint = 'Ikut ikon mata; nominal tampil lagi saat item dibuka untuk diubah';
+  static const privacy = 'Privasi';
 }

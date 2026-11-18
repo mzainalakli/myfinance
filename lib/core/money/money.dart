@@ -13,6 +13,9 @@ enum NumberStyle {
   const NumberStyle(this.label, this.group, this.decimal);
 }
 
+/// Topeng nominal saat saldo disembunyikan (panjang tetap, tidak membocorkan besar angka).
+const String kMask = '••••••';
+
 /// Nominal uang: integer satuan terkecil + mata uang. Tidak pernah memakai double.
 class Money {
   /// Batas wajar agar aman di int 64-bit dan terbaca (sekitar 10 triliun unit utama).
@@ -51,7 +54,8 @@ class Money {
   }
 
   /// Bagian digit dengan pemisah ribuan & desimal, tanpa simbol/tanda.
-  String formatNumber({NumberStyle style = NumberStyle.id, bool trimZeroDecimals = false}) {
+  String formatNumber({NumberStyle style = NumberStyle.id, bool trimZeroDecimals = false, bool hidden = false}) {
+    if (hidden) return kMask;
     final abs = minor.abs();
     final whole = abs ~/ _factor;
     final frac = abs % _factor;
@@ -63,7 +67,8 @@ class Money {
   }
 
   /// Contoh: `Rp 18.000`, `-US$ 12,50` (simbol dipisah spasi, tanda di depan).
-  String format({NumberStyle style = NumberStyle.id, bool showSymbol = true, bool signed = false}) {
+  String format({NumberStyle style = NumberStyle.id, bool showSymbol = true, bool signed = false, bool hidden = false}) {
+    if (hidden) return kMask;
     final sign = minor < 0 ? '-' : (signed && minor > 0 ? '+' : '');
     final num = formatNumber(style: style);
     return showSymbol ? '$sign${currency.symbol} $num' : '$sign$num';

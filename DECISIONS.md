@@ -38,3 +38,12 @@
   = satu perintah (ikon + `ic_launcher_round` bulat). Foreground sengaja dibuat ±88% kanvas karena paket memberi inset 16%
   (simbol akhir ±60% kanvas adaptive, di dalam area aman 66%). Splash: latar polos `splash_bg` terang/gelap, Android 12+
   memakai ikon aplikasi. Pratinjau widget memakai `@mipmap/ic_launcher`. Lihat `docs/GANTI_LOGO.md`.
+- **Sembunyikan saldo** (Perbaikan 3): status `balance_hidden` di shared_preferences, satu saklar untuk aplikasi dan widget.
+  Topeng `••••••` (panjang tetap) lewat `Money.format/formatNumber(hidden:)` dan widget `MoneyText` (fade 150 ms,
+  pembaca layar hanya membaca "Nominal disembunyikan"). Berlaku di kartu ringkasan (Beranda, Riwayat), legenda/total donat,
+  tooltip tren; sumbu angka grafik dihilangkan saat tersembunyi (persentase tetap tampil). Ikon mata di kartu Beranda
+  (+ ketuk angka) dan di judul Riwayat/Statistik. **Widget**: `WidgetService.buildPayload` (murni, teruji) mengirim
+  topeng, bukan angka asli, dan `setBalanceHidden` langsung memperbarui widget. "Sembunyikan saat dibuka" diterapkan di
+  `main()` (aplikasi utama saja) dengan menulis status ke prefs, supaya popup/widget konsisten dengan status efektif.
+  "Sembunyikan nominal di riwayat" = nominal riwayat bertopeng hanya bila opsi aktif **dan** saldo sedang tersembunyi
+  (ikon mata tetap saklar utama; lembar ubah transaksi selalu menampilkan angka). CSV tidak terpengaruh.

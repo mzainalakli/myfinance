@@ -10,16 +10,20 @@ import 'app.dart';
 import 'core/providers.dart';
 import 'features/widget/quick_add_popup.dart';
 
-Future<ProviderScope> _boot(Widget Function() child) async {
+Future<ProviderScope> _boot(Widget Function() child, {Future<void> Function(SharedPreferences)? onPrefs}) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID');
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final prefs = await SharedPreferences.getInstance();
+  await onPrefs?.call(prefs);
   return ProviderScope(overrides: [sharedPrefsProvider.overrideWithValue(prefs)], child: child());
 }
 
 Future<void> main() async {
-  runApp(await _boot(() => const MyFinanceApp()));
+  runApp(await _boot(() => const MyFinanceApp(), onPrefs: (p) async {
+    // "Sembunyikan saldo saat aplikasi dibuka": simpan status efektif agar popup/widget konsisten.
+    if (p.getBool(SettingsNotifier.kHideOnStart) ?? false) await p.setBool(SettingsNotifier.kHidden, true);
+  }));
 }
 
 /// Entrypoint terpisah untuk popup catat cepat (dipanggil dari QuickAddActivity).

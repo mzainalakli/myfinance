@@ -1,5 +1,7 @@
 # Update terkini: MyFinance
 
+> **Perbaikan #1 (3 commit)** dicatat di bagian "Perbaikan #1" di bawah.
+
 Ringkasan kondisi aplikasi saat dokumen ini ditulis (18 Nov 2026).
 Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `../DECISIONS.md` (keputusan desain).
 
@@ -33,11 +35,32 @@ Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `..
 - Workflow GitHub belum pernah berjalan; secret keystore belum diisi.
 - Kinerja scroll daftar 10.000 baris di HP belum diukur.
 
-## Hasil tes otomatis (`flutter test`: 34 lolos)
+## Perbaikan #1 (dari pemakaian nyata di HP)
+
+1. **Input nominal natural** (`0135d0b`): `AmountInput` (state-machine murni). `1`,`0` → `10`; `000` → `10.000`;
+   desimal baru muncul setelah koma, tombol koma hanya untuk mata uang berdesimal (IDR/JPY: slot itu `000`);
+   `12,` tetap terlihat; awalan nol tidak menumpuk; backspace hapus koma; tahan = kosongkan; maks 12 digit bulat;
+   ganti mata uang mempertahankan bagian bulat. 26 tes. Soal "desimal muncul di IDR": penentuan desimal IDR (0) dan default
+   `IDR` diperiksa dan benar (diuji); keluhan berasal dari entri gaya kasir untuk mata uang berdesimal.
+2. **Logo** (`7898410`): logo asli (koin + panah naik, tanpa teks), adaptive icon (latar gradien, foreground, monokrom),
+   `ic_launcher_round`, splash tanpa logo Flutter (latar terang/gelap; Android 12+ memakai ikon aplikasi), pratinjau widget.
+   Dibangkitkan dengan `bash tool/make_icons.sh`; panduan `docs/GANTI_LOGO.md`.
+   Terverifikasi: manifest APK memakai `res/mipmap-anydpi-v26/ic_launcher.xml` (adaptive + monochrome), simbol di area aman
+   (±60% kanvas), pratinjau PNG dilihat. Bug yang ditemukan dan diperbaiki: inset 16% dari `flutter_launcher_icons` membuat simbol terlalu kecil.
+3. **Sembunyikan saldo**: ikon mata, topeng di aplikasi dan di data widget, status tersimpan, dua opsi di Pengaturan.
+   Tes: pemformat `hidden`, persistensi (termasuk "aplikasi ditutup"), `buildPayload` widget tanpa digit saat tersembunyi.
+
+**Belum bisa diverifikasi tanpa HP:** tampilan ikon di launcher (bentuk bulat/squircle, tema monokrom Android 13+),
+splash Android 12+ dan mode gelap, perilaku widget (topeng muncul/hilang saat ikon mata diketuk, rendering topeng di
+widget kecil), numpad di layar kecil (tombol koma, 4 tombol terakhir), pembaca layar (TalkBack), dan fade 150 ms.
+
+## Hasil tes otomatis (`flutter test`: 70 lolos)
 
 - `money_test`: format, parse, desimal per mata uang (IDR 0, USD 2, KWD 3), bolak-balik tanpa kehilangan presisi.
 - `data_test`: seed/migrasi, filter gabungan, kata kunci (`%`, `_` literal), arsip kategori, urutan frekuensi, hapus + urungkan, rekap per mata uang.
 - `stats_csv_test`: rincian kategori, batang bulanan, tren kumulatif, CSV (escape, anti injeksi rumus).
+- `amount_input_test`: input nominal IDR/USD/JPY/KWD, batas, ganti mata uang.
+- `privacy_test`: topeng, persistensi status, payload widget, `MoneyText`.
 - `performance_test`: 10.000 transaksi di SQLite memori (mode JIT): ambil semua baris ±160 ms,
   hitung statistik ±210 ms, filter kata kunci ±6 ms. Ini bukan ukuran di HP; kinerja daftar (scroll) belum diuji.
 - Catatan: `schemaVersion` masih 1, jadi tes migrasi baru mencakup pembuatan awal + buka ulang, belum jalur `onUpgrade`.

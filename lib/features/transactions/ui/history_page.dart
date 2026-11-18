@@ -84,6 +84,7 @@ class HistoryPage extends ConsumerWidget {
       child: Column(children: [
         ContentWidth(
           child: PageTitle(S.history, actions: [
+            const HideToggleButton(),
             IconButton(tooltip: S.exportCsv, onPressed: export, icon: const Icon(Icons.ios_share)),
           ]),
         ),

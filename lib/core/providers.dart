@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/transactions/data/repository.dart';
+import '../features/widget/widget_service.dart';
 import '../features/transactions/data/summary.dart';
 import '../features/transactions/data/tx_filter.dart';
 import 'db/database.dart';
@@ -25,15 +26,37 @@ class AppSettings {
   final TxType defaultType;
   final ThemeMode themeMode;
   final NumberStyle numberStyle;
+
+  /// Status sembunyikan saldo (disimpan; dipakai aplikasi DAN widget).
+  final bool balanceHidden;
+  final bool hideOnStart;
+  final bool hideHistoryAmounts;
   const AppSettings({
     this.defaultCurrency = 'IDR',
     this.defaultType = TxType.expense,
     this.themeMode = ThemeMode.system,
     this.numberStyle = NumberStyle.id,
+    this.balanceHidden = false,
+    this.hideOnStart = false,
+    this.hideHistoryAmounts = false,
   });
 
-  AppSettings copyWith({String? defaultCurrency, TxType? defaultType, ThemeMode? themeMode, NumberStyle? numberStyle}) =>
+  /// Nominal riwayat tersembunyi hanya bila opsinya aktif DAN saldo sedang disembunyikan (ikon mata = saklar utama).
+  bool get historyHidden => hideHistoryAmounts && balanceHidden;
+
+  AppSettings copyWith({
+    String? defaultCurrency,
+    TxType? defaultType,
+    ThemeMode? themeMode,
+    NumberStyle? numberStyle,
+    bool? balanceHidden,
+    bool? hideOnStart,
+    bool? hideHistoryAmounts,
+  }) =>
       AppSettings(
+        balanceHidden: balanceHidden ?? this.balanceHidden,
+        hideOnStart: hideOnStart ?? this.hideOnStart,
+        hideHistoryAmounts: hideHistoryAmounts ?? this.hideHistoryAmounts,
         defaultCurrency: defaultCurrency ?? this.defaultCurrency,
         defaultType: defaultType ?? this.defaultType,
         themeMode: themeMode ?? this.themeMode,
@@ -46,6 +69,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kType = 'default_type';
   static const _kTheme = 'theme_mode';
   static const _kNum = 'number_style';
+  static const kHidden = 'balance_hidden';
+  static const kHideOnStart = 'hide_on_start';
+  static const kHideHistory = 'hide_history_amounts';
 
   @override
   AppSettings build() {
@@ -55,6 +81,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
       defaultType: TxType.values.asNameMap()[p.getString(_kType)] ?? TxType.expense,
       themeMode: ThemeMode.values.asNameMap()[p.getString(_kTheme)] ?? ThemeMode.system,
       numberStyle: NumberStyle.values.asNameMap()[p.getString(_kNum)] ?? NumberStyle.id,
+      balanceHidden: p.getBool(kHidden) ?? false,
+      hideOnStart: p.getBool(kHideOnStart) ?? false,
+      hideHistoryAmounts: p.getBool(kHideHistory) ?? false,
     );
   }
 
@@ -73,6 +102,25 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await ref.read(sharedPrefsProvider).setString(_kTheme, m.name);
   }
 
+  /// Ubah status sembunyikan: simpan, lalu dorong ke widget (data yang dikirim sudah bertopeng).
+  Future<void> setBalanceHidden(bool v) async {
+    state = state.copyWith(balanceHidden: v);
+    await ref.read(sharedPrefsProvider).setBool(kHidden, v);
+    await WidgetService.refresh(ref.read(repoProvider), state);
+  }
+
+  Future<void> toggleBalanceHidden() => setBalanceHidden(!state.balanceHidden);
+
+  Future<void> setHideOnStart(bool v) async {
+    state = state.copyWith(hideOnStart: v);
+    await ref.read(sharedPrefsProvider).setBool(kHideOnStart, v);
+  }
+
+  Future<void> setHideHistoryAmounts(bool v) async {
+    state = state.copyWith(hideHistoryAmounts: v);
+    await ref.read(sharedPrefsProvider).setBool(kHideHistory, v);
+  }
+
   Future<void> setNumberStyle(NumberStyle s) async {
     state = state.copyWith(numberStyle: s);
     await ref.read(sharedPrefsProvider).setString(_kNum, s.name);
@@ -80,6 +128,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final hiddenProvider = Provider<bool>((ref) => ref.watch(settingsProvider.select((s) => s.balanceHidden)));
+final historyHiddenProvider = Provider<bool>((ref) => ref.watch(settingsProvider.select((s) => s.historyHidden)));
 final numberStyleProvider = Provider<NumberStyle>((ref) => ref.watch(settingsProvider.select((s) => s.numberStyle)));
 
 // ---------- filter bersama (Riwayat + Statistik) ----------

@@ -57,7 +57,7 @@ class StatsPage extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: Column(children: [
-        const ContentWidth(child: PageTitle(S.stats)),
+        const ContentWidth(child: PageTitle(S.stats, actions: [HideToggleButton()])),
         Expanded(child: ContentWidth(child: body)),
         FilterBar(trailing: [
           if (effective != null)
@@ -112,6 +112,7 @@ class _Charts extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final style = ref.watch(numberStyleProvider);
+    final hidden = ref.watch(hiddenProvider);
     final slices = categoryBreakdown(rows, type, currency.code);
     final bars = monthlyBars(rows, currency.code);
     final trend = balanceTrend(rows, currency.code);
@@ -161,8 +162,10 @@ class _Charts extends ConsumerWidget {
                   SizedBox(
                     width: 110,
                     child: FittedBox(
-                      child: Text(Money(total, currency).format(style: style),
-                          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      child: MoneyText(Money(total, currency),
+                          style: style,
+                          hidden: hidden,
+                          textStyle: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ]),
@@ -178,7 +181,8 @@ class _Charts extends ConsumerWidget {
                   Expanded(child: Text(s.category.name, overflow: TextOverflow.ellipsis)),
                   Text('${(s.minor * 100 / total).toStringAsFixed(0)}%', style: TextStyle(color: cs.onSurfaceVariant)),
                   const SizedBox(width: Tk.s12),
-                  Text(Money(s.minor, currency).format(style: style), style: const TextStyle(fontWeight: FontWeight.w500)),
+                  MoneyText(Money(s.minor, currency),
+                      style: style, hidden: hidden, textStyle: const TextStyle(fontWeight: FontWeight.w500)),
                 ]),
               ),
           ]);
@@ -202,8 +206,8 @@ class _Charts extends ConsumerWidget {
                   rightTitles: const AxisTitles(),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 44,
+                      showTitles: !hidden,
+                      reservedSize: hidden ? 0 : 44,
                       getTitlesWidget: (v, m) => v == m.max
                           ? const SizedBox.shrink()
                           : Text(compactNumber(v), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
@@ -260,8 +264,8 @@ class _Charts extends ConsumerWidget {
             rightTitles: const AxisTitles(),
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 48,
+                showTitles: !hidden,
+                reservedSize: hidden ? 0 : 48,
                 getTitlesWidget: (v, m) => (v == m.max || v == m.min)
                     ? const SizedBox.shrink()
                     : Text(compactNumber(v), style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
@@ -288,7 +292,7 @@ class _Charts extends ConsumerWidget {
               getTooltipItems: (spots) => [
                 for (final s in spots)
                   LineTooltipItem(
-                    '${shortDayLabel(trend[s.spotIndex].day)}\n${Money(trend[s.spotIndex].cumulativeMinor, currency).format(style: style)}',
+                    '${shortDayLabel(trend[s.spotIndex].day)}\n${Money(trend[s.spotIndex].cumulativeMinor, currency).format(style: style, hidden: hidden)}',
                     TextStyle(color: cs.onInverseSurface, fontSize: 12),
                   ),
               ],

@@ -38,7 +38,10 @@ class HomePage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(Tk.s16, Tk.s8, Tk.s16, Tk.s8),
               child: month.when(
                 data: (rows) =>
-                    SummaryCard(title: monthLabel(DateTime.now()), totals: summarize(rows.map((r) => r.tx))),
+                    SummaryCard(
+                        title: monthLabel(DateTime.now()),
+                        showEye: true,
+                        totals: summarize(rows.map((r) => r.tx))),
                 loading: () => const SizedBox(height: 120, child: Card()),
                 error: (e, _) => Text('$e'),
               ),
