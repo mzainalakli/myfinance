@@ -59,3 +59,17 @@
   (kategori, templates, pengaturan tetap) dan menulis cadangan CSV ke `<support dir>/backups/` sebelum menghapus.
   Penulisan dalam satu transaksi drift (rollback penuh bila gagal, termasuk kategori baru). `created_at/updated_at` = waktu impor.
   Tanpa perubahan skema DB. Pemilih file: `file_picker` (SAF, tanpa izin penyimpanan); parsing di isolate (`compute`).
+- **Kelola kategori (Perbaikan #2-1)**. *Investigasi*: repository sudah punya `updateCategory`/`setArchived`/`reorderCategories`
+  dan layar sudah bisa ketuk-untuk-edit, tetapi **tidak ada hapus**, tidak ada validasi (nama kembar lolos, bahkan antar kategori bawaan
+  dan hasil impor jadi ambigu), tidak ada larangan kategori terakhir, tidak ada pindah transaksi, jenis tidak bisa diubah, dan UI hanya
+  satu daftar bercampur dengan tombol arsip bolak-balik. Jadi kekurangannya di **repository dan UI**, bukan hanya UI.
+  *Aturan*: kunci pencocokan nama = `categoryKey(jenis, trim+huruf kecil)` di `repository.dart`, dipakai validasi **dan** impor CSV
+  (satu aturan). Kategori terarsip ikut dihitung saat cek kembar (kalau tidak, impor akan mendapat dua kandidat). Semua operasi
+  kategori berjalan dalam satu transaksi DB dan melempar `CategoryException` dengan kode (UI menerjemahkan ke teks).
+  Jenis hanya boleh diubah bila belum ada transaksi/templat; jenis berubah = kategori masuk di akhir urutan jenis baru.
+  **Hapus**: tanpa transaksi -> hapus permanen + Urungkan (`DeletedCategory` menyimpan baris & templat). Dengan transaksi -> sheet:
+  *Arsipkan* (disarankan) atau *Pindahkan* (`moveTransactionsAndDelete`, atomik; templat ikut dipindah). Tidak ada opsi hapus-beserta-transaksi.
+  Kategori aktif terakhir per jenis tidak bisa dihapus/diarsipkan/dipindah jenis (terarsip tidak dihitung sebagai pemilih).
+  Tabel `templates` belum dipakai UI mana pun dan widget/popup tidak menyimpan id kategori, jadi rujukan hanya perlu dijaga di DB
+  (dipindah saat pindah; templat ikut dihapus bila kategorinya dihapus; arsip tidak menyentuh templat). Tanpa perubahan skema.
+  Tes fixture impor yang sebelumnya menambah kategori kembar kini memakai kategori bawaan yang sama.

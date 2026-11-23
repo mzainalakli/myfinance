@@ -36,8 +36,14 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  Future<int> cat(Repository r, String name, TxType t, {String icon = 'more', int color = 0xFF112233}) =>
-      r.addCategory(name: name, icon: icon, color: color, type: t);
+  /// Nama kembar dilarang: pakai kategori bawaan yang sama bila ada (ikon/warna disesuaikan).
+  Future<int> cat(Repository r, String name, TxType t, {String icon = 'more', int color = 0xFF112233}) async {
+    final all = await r.watchAllCategories().first;
+    final hit = all.where((c) => categoryKey(c.type, c.name) == categoryKey(t, name)).firstOrNull;
+    if (hit == null) return r.addCategory(name: name, icon: icon, color: color, type: t);
+    await r.updateCategory(hit.id, icon: icon, color: color);
+    return hit.id;
+  }
 
   /// Semua kolom bermakna, urut stabil, untuk perbandingan persis.
   Future<List<String>> snapshot(Repository r) async {
@@ -197,7 +203,7 @@ void main() {
 
     test('kategori terarsip yang cocok dipakai kembali (bukan kategori baru)', () async {
       final f = await cat(dstRepo, 'Lama', TxType.expense);
-      await dstRepo.setArchived(f, true);
+      await dstRepo.archiveCategory(f);
       final rec = TxCsvRecord(occurredAt: DateTime.utc(2026, 1, 1), type: TxType.expense, category: ' lama ', amountMinor: 1, currency: idr);
       final s = ImportService(dst, backupDir: tmp);
       final plan = await s.plan(TxCsvParseResult(records: [rec]), ImportMode.merge);

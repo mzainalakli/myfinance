@@ -52,7 +52,7 @@ class ImportResult {
   const ImportResult({required this.added, required this.skipped, required this.failed, this.backupPath});
 }
 
-String _catKey(TxType t, String name) => '${t.name}|${name.trim().toLowerCase()}';
+String _catKey(TxType t, String name) => categoryKey(t, name);
 
 /// Sidik jari transaksi: waktu + jenis + nominal + mata uang + kategori + catatan.
 String _fp(int timeKey, TxType t, int minor, String cur, String cat, String note) =>

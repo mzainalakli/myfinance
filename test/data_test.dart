@@ -122,7 +122,7 @@ void main() {
     });
 
     test('kategori terarsip: transaksi lama tetap muncul', () async {
-      await repo.setArchived(food, true);
+      await repo.archiveCategory(food);
       expect(await count(const TxFilter(period: QuickPeriod.all)), 5);
       final active = await repo.watchCategories(TxType.expense).first;
       expect(active.any((c) => c.id == food), isFalse);

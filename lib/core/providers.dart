@@ -162,3 +162,6 @@ final allCategoriesProvider =
 
 final usedCurrenciesProvider =
     StreamProvider<List<String>>((ref) => ref.watch(repoProvider).watchUsedCurrencies());
+
+final categoryCountsProvider =
+    StreamProvider<Map<int, int>>((ref) => ref.watch(repoProvider).watchCategoryCounts());
