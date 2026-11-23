@@ -89,3 +89,8 @@
   `test/fab_overlap_test.dart` (3 layar × 2 ukuran × 2 skala teks × 2 jumlah data) gagal pada tata letak lama (diverifikasi: 8 galat).
   *Bug tambahan yang ditemukan tes*: `bottomNavigationBar` berisi `Align` (via `ContentWidth`) membentang setinggi layar dan
   menghabiskan ruang daftar; di Kelola Kategori kini memakai `Center(heightFactor: 1)`.
+- **Kegagalan CI `fab_overlap_test` (data sedikit, /history 360x640, teks x1.3)**: penyebab = tes, bukan aplikasi. Data uji dibuat
+  dengan `now - i*7 jam`; di runner CI (UTC, ~04:34) transaksi kedua jatuh ke hari sebelumnya, sehingga muncul header hari
+  tambahan dan baris kedua terdorong ke jalur FAB (tinggi daftar bergantung pada jam dan zona waktu mesin, tidak pernah gagal di
+  WIB lokal). Perbaikan: data uji kini terikat ke tengah hari lokal (data sedikit = satu hari), jadi deterministik. Assertion tidak
+  dilonggarkan. Tes kinerja tidak gagal di CI (parse 115 ms vs batas 3000 ms, dst.; margin sudah >10x), jadi batasnya tidak diubah.

@@ -50,7 +50,12 @@ void main() {
           money: Money(1000 + i, idr),
           categoryId: cats[i % cats.length].id,
           note: 'catatan $i',
-          occurredAt: now.subtract(Duration(hours: i * 7)),
+          // Deterministik terhadap jam & zona waktu mesin: data sedikit = satu hari (satu header);
+          // data banyak = tiap 7 jam dari tengah hari ini. Tanpa ini, jumlah header hari (dan tinggi
+          // daftar) berubah menurut jam/TZ saat tes dijalankan (CI UTC vs lokal).
+          occurredAt: rows <= 3
+              ? DateTime(now.year, now.month, now.day, 12).subtract(Duration(minutes: i))
+              : DateTime(now.year, now.month, now.day, 12).subtract(Duration(hours: i * 7)),
         );
       }
     });
