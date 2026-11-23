@@ -73,3 +73,19 @@
   Tabel `templates` belum dipakai UI mana pun dan widget/popup tidak menyimpan id kategori, jadi rujukan hanya perlu dijaga di DB
   (dipindah saat pindah; templat ikut dihapus bila kategorinya dihapus; arsip tidak menyentuh templat). Tanpa perubahan skema.
   Tes fixture impor yang sebelumnya menambah kategori kembar kini memakai kategori bawaan yang sama.
+- **FAB vs filter (Perbaikan #2-2)**. *Investigasi (dari kode, belum dilihat di HP)*: hanya `AppShell` yang memiliki FAB (`endFloat`,
+  di atas bar navigasi), jadi tampil di Beranda, Riwayat, Statistik. Kelola Kategori adalah rute di luar shell: **tidak ada FAB**.
+  Tumpang tindih: `FilterBar` (chip periode + tombol filter) berada di dasar kolom Riwayat dan Statistik, tepat di strip tempat FAB
+  melayang, di ukuran apa pun (lebih parah di 360 dp dan teks besar karena FAB "Catat" ±138 dp). Statistik juga menaruh tombol
+  segmen Keluar/Masuk di dasar, ikut tertutup. Beranda: tombol "Riwayat" selebar layar di ujung daftar, bisa di bawah FAB di layar pendek.
+  **Pola yang dipilih (semua layar)**: kontrol *tidak pernah* di dasar layar; filter periode (dan segmen Statistik) menempel
+  tetap di bawah judul halaman, dan hanya daftar yang bergulir di dasar. Daftar memberi `Tk.fabClearance` (88 = 56 + 16 + 16)
+  di bawah. FAB menyusut ke ikon saat menggulir ke bawah (`isExtended`), kembali saat menggulir ke atas atau saat gulir benar-benar
+  berhenti (`ScrollEndNotification`; `idle` pada `UserScrollNotification` diabaikan karena itu hanya jari terangkat saat fling);
+  gulir mendatar (chip) diabaikan. Snackbar mengambang otomatis di atas FAB karena semua pesan lewat Scaffold milik shell.
+  FAB mengecil sampai hilang saat keyboard terbuka; sheet modal menutupinya lewat penghalang.
+  *Batas tes*: pada posisi gulir awal dengan data banyak, baris daftar yang sedang bergulir pasti ada di bawah FAB (itu sifat
+  daftar); yang diuji di posisi awal adalah semua tombol/chip, dan baris ikut diuji di posisi akhir serta pada data sedikit.
+  `test/fab_overlap_test.dart` (3 layar × 2 ukuran × 2 skala teks × 2 jumlah data) gagal pada tata letak lama (diverifikasi: 8 galat).
+  *Bug tambahan yang ditemukan tes*: `bottomNavigationBar` berisi `Align` (via `ContentWidth`) membentang setinggi layar dan
+  menghabiskan ruang daftar; di Kelola Kategori kini memakai `Center(heightFactor: 1)`.

@@ -88,6 +88,7 @@ class HistoryPage extends ConsumerWidget {
             IconButton(tooltip: S.exportCsv, onPressed: export, icon: const Icon(Icons.ios_share)),
           ]),
         ),
+        const FilterBar(),
         Expanded(
           child: ContentWidth(
             child: rows == null
@@ -102,7 +103,6 @@ class HistoryPage extends ConsumerWidget {
                     : _List(rows: rows),
           ),
         ),
-        const FilterBar(),
       ]),
     );
   }
@@ -118,7 +118,7 @@ class _List extends ConsumerWidget {
     final totals = summarize(rows.map((r) => r.tx));
     final cs = Theme.of(context).colorScheme;
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 88),
+      padding: const EdgeInsets.only(bottom: Tk.fabClearance),
       itemCount: items.length + 1,
       itemBuilder: (context, i) {
         if (i == 0) {

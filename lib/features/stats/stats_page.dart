@@ -58,7 +58,6 @@ class StatsPage extends ConsumerWidget {
       bottom: false,
       child: Column(children: [
         const ContentWidth(child: PageTitle(S.stats, actions: [HideToggleButton()])),
-        Expanded(child: ContentWidth(child: body)),
         FilterBar(trailing: [
           if (effective != null)
             Padding(
@@ -89,6 +88,7 @@ class StatsPage extends ConsumerWidget {
             ),
           ),
         ),
+        Expanded(child: ContentWidth(child: body)),
       ]),
     );
   }
@@ -314,7 +314,7 @@ class _Charts extends ConsumerWidget {
       );
     }
 
-    return ListView(padding: const EdgeInsets.only(bottom: Tk.s16), children: [
+    return ListView(padding: const EdgeInsets.only(bottom: Tk.fabClearance), children: [
       titled(S.expenseByCategory, donut, sub: type == TxType.expense ? S.expense : S.income),
       titled(S.monthly, barChart),
       titled(S.trend, line, sub: S.trendNote),

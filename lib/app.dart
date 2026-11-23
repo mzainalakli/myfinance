@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'core/app_config.dart';
 import 'core/providers.dart';
 import 'core/strings.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/tokens.dart';
 import 'features/settings/categories_page.dart';
 import 'features/settings/import_page.dart';
 import 'features/settings/settings_page.dart';
@@ -22,8 +24,8 @@ const appLocalizations = <LocalizationsDelegate<dynamic>>[
   GlobalCupertinoLocalizations.delegate,
 ];
 
-final _router = GoRouter(
-  initialLocation: '/home',
+GoRouter buildRouter({String initialLocation = '/home'}) => GoRouter(
+  initialLocation: initialLocation,
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => AppShell(shell: shell),
@@ -44,8 +46,12 @@ final _router = GoRouter(
   ],
 );
 
+final _router = buildRouter();
+
 class MyFinanceApp extends ConsumerStatefulWidget {
-  const MyFinanceApp({super.key});
+  /// [router] hanya untuk pengujian; aplikasi memakai router bawaan.
+  final GoRouter? router;
+  const MyFinanceApp({super.key, this.router});
   @override
   ConsumerState<MyFinanceApp> createState() => _MyFinanceAppState();
 }
@@ -88,23 +94,60 @@ class _MyFinanceAppState extends ConsumerState<MyFinanceApp> with WidgetsBinding
       locale: const Locale('id', 'ID'),
       supportedLocales: const [Locale('id', 'ID')],
       localizationsDelegates: appLocalizations,
-      routerConfig: _router,
+      routerConfig: widget.router ?? _router,
     );
   }
 }
 
-class AppShell extends StatelessWidget {
+/// Kerangka tiga tab + satu-satunya FAB aplikasi. Aturan FAB (berlaku di semua tab, lihat DECISIONS.md):
+/// konten tidak boleh punya kontrol di jalur FAB (filter di atas, bukan di bawah), daftar memberi ruang
+/// bawah [Tk.fabClearance], FAB menyusut saat menggulir ke bawah, dan disembunyikan saat keyboard muncul.
+class AppShell extends StatefulWidget {
   final StatefulNavigationShell shell;
   const AppShell({super.key, required this.shell});
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  bool extended = true;
+
+  void _setExtended(bool v) {
+    if (v != extended) setState(() => extended = v);
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false; // chip filter yang digeser mendatar diabaikan
+    if (n is UserScrollNotification) {
+      // reverse = isi naik (menggulir ke bawah): susut. forward = ke atas: tampil lagi.
+      // idle diabaikan: itu hanya jari terangkat, gulir lanjutan (fling) masih berjalan.
+      if (n.direction == ScrollDirection.reverse) _setExtended(false);
+      if (n.direction == ScrollDirection.forward) _setExtended(true);
+    } else if (n is ScrollEndNotification) {
+      _setExtended(true); // daftar benar-benar berhenti
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final shell = widget.shell;
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
-      body: shell,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showQuickAddSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text(S.record),
+      body: NotificationListener<ScrollNotification>(onNotification: _onScroll, child: shell),
+      floatingActionButton: AnimatedScale(
+        scale: keyboard ? 0 : 1,
+        duration: const Duration(milliseconds: 150),
+        child: IgnorePointer(
+          ignoring: keyboard,
+          child: FloatingActionButton.extended(
+            isExtended: extended,
+            tooltip: S.record,
+            onPressed: () => showQuickAddSheet(context),
+            icon: const Icon(Icons.add),
+            label: const Text(S.record),
+          ),
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,

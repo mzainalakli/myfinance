@@ -1,6 +1,6 @@
 # Update terkini: MyFinance
 
-> **Perbaikan #1 (3 commit)** dicatat di bagian "Perbaikan #1" di bawah.
+> **Perbaikan #1 (3 commit)** dicatat di bagian "Perbaikan #1" di bawah; **Perbaikan #2 (kategori + FAB)** di bagian "Perbaikan #2".
 
 Ringkasan kondisi aplikasi saat dokumen ini ditulis (18 Nov 2026).
 Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `../DECISIONS.md` (keputusan desain).
@@ -116,3 +116,17 @@ Tabel `templates` sudah ada di skema.
 1. Coba di emulator/HP: popup, widget, shortcut, 360x640, mode gelap; ukur scroll 10.000 baris.
 2. Periksa ukuran APK.
 3. Buat keystore + secret (lihat `RILIS.md`), push ke `main`, pastikan tag `vX.Y.Z.N` dan 3 APK terbentuk.
+
+## Perbaikan #2 (kategori + FAB)
+
+1. **Kelola kategori**: ubah nama/ikon/warna (bawaan pun), validasi nama (kosong, >40, kembar jenis sama termasuk yang diarsipkan;
+   aturan kunci sama dengan impor), jenis terkunci bila sudah dipakai, hapus tanpa transaksi (+Urungkan), hapus dengan transaksi =
+   Arsipkan (disarankan) atau Pindahkan (atomik), kategori aktif terakhir per jenis dilindungi, bagian "Diarsipkan" + Pulihkan,
+   daftar per jenis dengan jumlah transaksi, swipe Ubah/Hapus + ketuk, drag urutan. Skema DB tidak berubah, format CSV tidak berubah.
+   Tes: `test/category_management_test.dart` (termasuk rollback pindah di tengah jalan).
+2. **FAB**: filter dipindah ke bawah judul (Riwayat, Statistik), ruang bawah daftar, FAB menyusut/muncul, tersembunyi saat
+   keyboard. Tes: `test/fab_overlap_test.dart`. Lihat `DECISIONS.md` untuk investigasi dan pola.
+
+**Belum diverifikasi di HP**: tampilan nyata FAB dan filter (jarak, animasi susut), gestur drag urutan kategori dan swipe,
+tampilan sheet hapus/arsip di layar kecil, snackbar Urungkan di atas FAB, perilaku FAB dengan keyboard sungguhan dan
+navigasi gestur vs 3 tombol. Tes widget memakai tata letak simulasi, bukan perangkat.

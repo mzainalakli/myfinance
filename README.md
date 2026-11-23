@@ -19,9 +19,9 @@ Catatan: bila sebelumnya memasang APK debug/uji, aplikasi itu harus di-uninstall
 - **Catat**: tombol **Catat** (kanan bawah), atau widget layar utama (**+ Keluar / + Masuk**),
   atau tekan lama ikon aplikasi. Pilih kategori, ketik nominal di numpad, **Simpan**.
 - **Riwayat**: dikelompokkan per hari. Geser ke kanan untuk ubah, ke kiri untuk hapus (bisa diurungkan).
-  Chip periode dan tombol filter ada di bawah. Ikon bagikan di atas mengekspor CSV sesuai filter.
+  Chip periode dan tombol filter menempel di bawah judul (di luar jalur tombol Catat). Ikon bagikan di atas mengekspor CSV sesuai filter.
 - **Statistik**: donat per kategori, batang per bulan, tren selisih. Mengikuti filter yang sama; per satu mata uang.
-- **Pengaturan** (ikon di Beranda): mata uang/jenis default, tema, format angka, kelola kategori, ekspor semua.
+- **Pengaturan** (ikon di Beranda): mata uang/jenis default, tema, format angka, kelola kategori (ubah nama/ikon/warna, hapus, arsip + pulihkan, pindahkan transaksi, urut dengan drag), ekspor semua.
 - **Ekspor lalu impor CSV**: Riwayat (ikon bagikan, sesuai filter) atau Pengaturan → *Ekspor semua data* menghasilkan
   berkas CSV. Pengaturan → *Impor data (CSV)* membaca berkas itu kembali: pilih berkas → pratinjau (jumlah valid, duplikat,
   baris bermasalah, kategori baru, total per mata uang) → pilih mode → Impor. Tersedia juga template CSV kosong.

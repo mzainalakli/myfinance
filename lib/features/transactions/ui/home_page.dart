@@ -25,7 +25,7 @@ class HomePage extends ConsumerWidget {
       bottom: false,
       child: ContentWidth(
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 96),
+          padding: const EdgeInsets.only(bottom: Tk.fabClearance),
           children: [
             PageTitle(AppConfig.appName, actions: [
               IconButton(
@@ -64,10 +64,14 @@ class HomePage extends ConsumerWidget {
                           showDate: true,
                           onTap: () => showQuickAddSheet(context, editing: r),
                         ),
-                      TextButton(
-                        onPressed: () => context.go('/history'),
-                        style: TextButton.styleFrom(minimumSize: const Size.fromHeight(Tk.touch)),
-                        child: const Text(S.history),
+                      // rata kiri, selebar isinya: tidak membentang ke jalur FAB di kanan bawah
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => context.go('/history'),
+                          style: TextButton.styleFrom(minimumSize: const Size(Tk.touch, Tk.touch)),
+                          child: const Text(S.history),
+                        ),
                       ),
                     ]),
               loading: () => const SkeletonList(count: 4),
