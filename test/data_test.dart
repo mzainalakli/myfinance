@@ -47,7 +47,8 @@ void main() {
       expect(v.data['user_version'], AppDatabase.currentVersion);
       final idx = await db.customSelect(
           "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_tx_%'").get();
-      expect(idx.length, 2);
+      expect(idx.length, 3, reason: 'occurred, category, nomor_faktur (unik)');
+      await db.select(db.sellers).get(); // tabel penjual ada
       await db.select(db.templates).get(); // tabel templates ada
     });
 

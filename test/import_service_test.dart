@@ -50,7 +50,7 @@ void main() {
     final rows = await r.rows(TxFilter.all);
     final l = [
       for (final x in rows)
-        '${x.tx.occurredAt}|${x.tx.type.name}|${x.tx.amountMinor}|${x.tx.currencyCode}|${x.category.name}|${x.category.type.name}|${x.tx.note}'
+        '${x.tx.occurredAt}|${x.tx.type.name}|${x.tx.amountMinor}|${x.tx.currencyCode}|${x.category.name}|${x.category.type.name}|${x.tx.note}|${x.tx.invoiceNo}'
     ]..sort();
     return l;
   }
@@ -66,8 +66,15 @@ void main() {
     final food = await cat(srcRepo, 'Makan & Minum', TxType.expense, icon: 'restaurant', color: 0xFFEF6C00);
     final odd = await cat(srcRepo, '=Aneh, "kutip"', TxType.expense, icon: 'gift', color: 0xFF00897B);
     final sal = await cat(srcRepo, 'Gaji', TxType.income, icon: 'salary', color: 0xFF43A047);
-    Future<void> add(TxType t, int minor, cur, int c, DateTime at, String note) =>
-        srcRepo.addTransaction(type: t, money: Money(minor, cur), categoryId: c, occurredAt: at, note: note);
+    var inv = 0;
+    // beberapa transaksi membawa nomor faktur (kolom no_faktur ikut round-trip), sisanya NULL
+    Future<void> add(TxType t, int minor, cur, int c, DateTime at, String note) => srcRepo.addTransaction(
+        type: t,
+        money: Money(minor, cur),
+        categoryId: c,
+        occurredAt: at,
+        note: note,
+        invoiceNo: minor % 3 == 0 && note != 'kembar' ? 'TW${(10000000 + inv++)}' : null);
     await add(TxType.expense, 18000, idr, food, DateTime(2026, 11, 18, 8, 5, 7, 123), 'Kopi, "enak"');
     await add(TxType.expense, 1250, usd, food, DateTime(2026, 11, 18, 23, 59, 59, 999), 'baris 1\nbaris 2');
     await add(TxType.expense, 500, jpy, odd, DateTime(2026, 11, 19, 0, 0, 0, 1), '=1+1');

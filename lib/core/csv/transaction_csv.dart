@@ -19,9 +19,10 @@ class TxCsv {
   static const colNote = 'Catatan';
   static const colIcon = 'Ikon';
   static const colColor = 'Warna';
+  static const colInvoice = 'no_faktur';
 
-  /// Urutan penulisan. Kolom wajib dibaca; Ikon/Warna opsional.
-  static const header = [colDate, colType, colCategory, colAmount, colCurrency, colNote, colIcon, colColor];
+  /// Urutan penulisan. Kolom wajib dibaca; Ikon/Warna/no_faktur opsional (berkas lama tanpa kolom ini tetap terbaca).
+  static const header = [colDate, colType, colCategory, colAmount, colCurrency, colNote, colIcon, colColor, colInvoice];
   static const typeIncome = 'Masuk';
   static const typeExpense = 'Keluar';
 
@@ -45,6 +46,9 @@ class TxCsvRecord {
   final String? icon;
   final int? color;
 
+  /// Nomor faktur elektronik (opsional, huruf besar tanpa strip).
+  final String? invoiceNo;
+
   const TxCsvRecord({
     this.line = 0,
     required this.occurredAt,
@@ -56,6 +60,7 @@ class TxCsvRecord {
     this.note = '',
     this.icon,
     this.color,
+    this.invoiceNo,
   });
 }
 
@@ -126,6 +131,7 @@ String encodeTransactions(Iterable<TxCsvRecord> records) {
       _quote(_protect(r.note)),
       r.icon ?? '',
       r.color == null ? '' : _colorHex(r.color!),
+      r.invoiceNo ?? '',
     ].join(','));
     b.write('\r\n');
   }
@@ -157,7 +163,7 @@ String encodeTemplate({DateTime? now}) {
 
 // ---------------------------------------------------------------- pembaca
 
-enum _Col { date, type, category, amount, currency, note, icon, color }
+enum _Col { date, type, category, amount, currency, note, icon, color, invoice }
 
 const _aliases = <String, _Col>{
   'tanggal': _Col.date, 'date': _Col.date, 'waktu': _Col.date,
@@ -168,6 +174,7 @@ const _aliases = <String, _Col>{
   'catatan': _Col.note, 'note': _Col.note, 'notes': _Col.note, 'keterangan': _Col.note,
   'ikon': _Col.icon, 'icon': _Col.icon,
   'warna': _Col.color, 'color': _Col.color, 'colour': _Col.color,
+  'nofaktur': _Col.invoice, 'invoice': _Col.invoice, 'invoiceno': _Col.invoice, 'nomorfaktur': _Col.invoice,
 };
 
 String _norm(String h) => h.toLowerCase().replaceAll(RegExp(r'[\s_\-]'), '');
@@ -285,6 +292,7 @@ TxCsvParseResult parseTransactionCsv(String text) {
     final icon = cell(_Col.icon);
     final colorRaw = cell(_Col.color).replaceFirst('#', '');
     final color = RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(colorRaw) ? 0xFF000000 | int.parse(colorRaw, radix: 16) : null;
+    final invoice = _unprotect(cell(_Col.invoice)).trim().toUpperCase();
     records.add(TxCsvRecord(
       line: r.line,
       occurredAt: when!,
@@ -296,6 +304,7 @@ TxCsvParseResult parseTransactionCsv(String text) {
       note: _unprotect(cell(_Col.note)).trim(),
       icon: categoryIcons.containsKey(icon) ? icon : null,
       color: color,
+      invoiceNo: invoice.isEmpty ? null : invoice,
     ));
   }
   return TxCsvParseResult(records: records, errors: errors, delimiter: table.delimiter, totalRows: rows.length);

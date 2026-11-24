@@ -64,11 +64,11 @@ void main() {
         row(2, TxType.income, 5000000, 'IDR', DateTime(2026, 11, 1, 9), catName: 'Gaji'),
       ]);
       final lines = csv.trim().split('\r\n');
-      expect(lines[0], 'Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna');
-      expect(lines[1], '${formatCsvDate(when)},Keluar,Makan,12.50,USD,"kopi, ""enak""",more,#000000');
+      expect(lines[0], 'Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna,no_faktur');
+      expect(lines[1], '${formatCsvDate(when)},Keluar,Makan,12.50,USD,"kopi, ""enak""",more,#000000,');
       expect(lines[1], startsWith('2026-11-18T08:05:07.123'));
       expect(lines[2], startsWith('2026-11-01T09:00:00.000'));
-      expect(lines[2], endsWith(',Masuk,Gaji,5000000,IDR,,more,#000000'));
+      expect(lines[2], endsWith(',Masuk,Gaji,5000000,IDR,,more,#000000,'));
     });
 
     test('mencegah injeksi rumus', () {

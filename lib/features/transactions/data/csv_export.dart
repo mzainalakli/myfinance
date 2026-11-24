@@ -17,6 +17,7 @@ TxCsvRecord toCsvRecord(TxRow r) => TxCsvRecord(
       note: r.tx.note,
       icon: r.category.icon,
       color: r.category.color,
+      invoiceNo: r.tx.invoiceNo,
     );
 
 String buildCsv(List<TxRow> rows) => encodeTransactions(rows.map(toCsvRecord));

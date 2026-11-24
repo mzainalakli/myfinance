@@ -565,6 +565,17 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _invoiceNoMeta = const VerificationMeta(
+    'invoiceNo',
+  );
+  @override
+  late final GeneratedColumn<String> invoiceNo = GeneratedColumn<String>(
+    'nomor_faktur',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -576,6 +587,7 @@ class $TransactionsTable extends Transactions
     occurredAt,
     createdAt,
     updatedAt,
+    invoiceNo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -652,6 +664,12 @@ class $TransactionsTable extends Transactions
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('nomor_faktur')) {
+      context.handle(
+        _invoiceNoMeta,
+        invoiceNo.isAcceptableOrUnknown(data['nomor_faktur']!, _invoiceNoMeta),
+      );
+    }
     return context;
   }
 
@@ -699,6 +717,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
       )!,
+      invoiceNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nomor_faktur'],
+      ),
     );
   }
 
@@ -725,6 +747,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final int occurredAt;
   final int createdAt;
   final int updatedAt;
+
+  /// Nomor faktur elektronik Taiwan (mis. HB35094463), NULL untuk catatan biasa.
+  final String? invoiceNo;
   const Transaction({
     required this.id,
     required this.type,
@@ -735,6 +760,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.occurredAt,
     required this.createdAt,
     required this.updatedAt,
+    this.invoiceNo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -752,6 +778,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     map['occurred_at'] = Variable<int>(occurredAt);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || invoiceNo != null) {
+      map['nomor_faktur'] = Variable<String>(invoiceNo);
+    }
     return map;
   }
 
@@ -766,6 +795,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       occurredAt: Value(occurredAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      invoiceNo: invoiceNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invoiceNo),
     );
   }
 
@@ -786,6 +818,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       occurredAt: serializer.fromJson<int>(json['occurredAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      invoiceNo: serializer.fromJson<String?>(json['invoiceNo']),
     );
   }
   @override
@@ -803,6 +836,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'occurredAt': serializer.toJson<int>(occurredAt),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
+      'invoiceNo': serializer.toJson<String?>(invoiceNo),
     };
   }
 
@@ -816,6 +850,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     int? occurredAt,
     int? createdAt,
     int? updatedAt,
+    Value<String?> invoiceNo = const Value.absent(),
   }) => Transaction(
     id: id ?? this.id,
     type: type ?? this.type,
@@ -826,6 +861,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     occurredAt: occurredAt ?? this.occurredAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    invoiceNo: invoiceNo.present ? invoiceNo.value : this.invoiceNo,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
     return Transaction(
@@ -846,6 +882,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           : this.occurredAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      invoiceNo: data.invoiceNo.present ? data.invoiceNo.value : this.invoiceNo,
     );
   }
 
@@ -860,7 +897,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('note: $note, ')
           ..write('occurredAt: $occurredAt, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('invoiceNo: $invoiceNo')
           ..write(')'))
         .toString();
   }
@@ -876,6 +914,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     occurredAt,
     createdAt,
     updatedAt,
+    invoiceNo,
   );
   @override
   bool operator ==(Object other) =>
@@ -889,7 +928,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.note == this.note &&
           other.occurredAt == this.occurredAt &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.invoiceNo == this.invoiceNo);
 }
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
@@ -902,6 +942,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int> occurredAt;
   final Value<int> createdAt;
   final Value<int> updatedAt;
+  final Value<String?> invoiceNo;
   const TransactionsCompanion({
     this.id = const Value.absent(),
     this.type = const Value.absent(),
@@ -912,6 +953,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.occurredAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.invoiceNo = const Value.absent(),
   });
   TransactionsCompanion.insert({
     this.id = const Value.absent(),
@@ -923,6 +965,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required int occurredAt,
     required int createdAt,
     required int updatedAt,
+    this.invoiceNo = const Value.absent(),
   }) : type = Value(type),
        amountMinor = Value(amountMinor),
        currencyCode = Value(currencyCode),
@@ -940,6 +983,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? occurredAt,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
+    Expression<String>? invoiceNo,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -951,6 +995,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (occurredAt != null) 'occurred_at': occurredAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (invoiceNo != null) 'nomor_faktur': invoiceNo,
     });
   }
 
@@ -964,6 +1009,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<int>? occurredAt,
     Value<int>? createdAt,
     Value<int>? updatedAt,
+    Value<String?>? invoiceNo,
   }) {
     return TransactionsCompanion(
       id: id ?? this.id,
@@ -975,6 +1021,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       occurredAt: occurredAt ?? this.occurredAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      invoiceNo: invoiceNo ?? this.invoiceNo,
     );
   }
 
@@ -1010,6 +1057,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
+    if (invoiceNo.present) {
+      map['nomor_faktur'] = Variable<String>(invoiceNo.value);
+    }
     return map;
   }
 
@@ -1024,7 +1074,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('note: $note, ')
           ..write('occurredAt: $occurredAt, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('invoiceNo: $invoiceNo')
           ..write(')'))
         .toString();
   }
@@ -1443,12 +1494,334 @@ class TemplatesCompanion extends UpdateCompanion<Template> {
   }
 }
 
+class $SellersTable extends Sellers with TableInfo<$SellersTable, Seller> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SellersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _npwpMeta = const VerificationMeta('npwp');
+  @override
+  late final GeneratedColumn<String> npwp = GeneratedColumn<String>(
+    'npwp',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 8,
+      maxTextLength: 8,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'nama',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+    'kategori_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id)',
+    ),
+  );
+  static const VerificationMeta _lastUsedMeta = const VerificationMeta(
+    'lastUsed',
+  );
+  @override
+  late final GeneratedColumn<int> lastUsed = GeneratedColumn<int>(
+    'terakhir_dipakai',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [npwp, name, categoryId, lastUsed];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'penjual';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Seller> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('npwp')) {
+      context.handle(
+        _npwpMeta,
+        npwp.isAcceptableOrUnknown(data['npwp']!, _npwpMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_npwpMeta);
+    }
+    if (data.containsKey('nama')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['nama']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('kategori_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['kategori_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('terakhir_dipakai')) {
+      context.handle(
+        _lastUsedMeta,
+        lastUsed.isAcceptableOrUnknown(
+          data['terakhir_dipakai']!,
+          _lastUsedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastUsedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {npwp};
+  @override
+  Seller map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Seller(
+      npwp: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}npwp'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nama'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kategori_id'],
+      )!,
+      lastUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}terakhir_dipakai'],
+      )!,
+    );
+  }
+
+  @override
+  $SellersTable createAlias(String alias) {
+    return $SellersTable(attachedDatabase, alias);
+  }
+}
+
+class Seller extends DataClass implements Insertable<Seller> {
+  final String npwp;
+  final String? name;
+  final int categoryId;
+  final int lastUsed;
+  const Seller({
+    required this.npwp,
+    this.name,
+    required this.categoryId,
+    required this.lastUsed,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['npwp'] = Variable<String>(npwp);
+    if (!nullToAbsent || name != null) {
+      map['nama'] = Variable<String>(name);
+    }
+    map['kategori_id'] = Variable<int>(categoryId);
+    map['terakhir_dipakai'] = Variable<int>(lastUsed);
+    return map;
+  }
+
+  SellersCompanion toCompanion(bool nullToAbsent) {
+    return SellersCompanion(
+      npwp: Value(npwp),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      categoryId: Value(categoryId),
+      lastUsed: Value(lastUsed),
+    );
+  }
+
+  factory Seller.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Seller(
+      npwp: serializer.fromJson<String>(json['npwp']),
+      name: serializer.fromJson<String?>(json['name']),
+      categoryId: serializer.fromJson<int>(json['categoryId']),
+      lastUsed: serializer.fromJson<int>(json['lastUsed']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'npwp': serializer.toJson<String>(npwp),
+      'name': serializer.toJson<String?>(name),
+      'categoryId': serializer.toJson<int>(categoryId),
+      'lastUsed': serializer.toJson<int>(lastUsed),
+    };
+  }
+
+  Seller copyWith({
+    String? npwp,
+    Value<String?> name = const Value.absent(),
+    int? categoryId,
+    int? lastUsed,
+  }) => Seller(
+    npwp: npwp ?? this.npwp,
+    name: name.present ? name.value : this.name,
+    categoryId: categoryId ?? this.categoryId,
+    lastUsed: lastUsed ?? this.lastUsed,
+  );
+  Seller copyWithCompanion(SellersCompanion data) {
+    return Seller(
+      npwp: data.npwp.present ? data.npwp.value : this.npwp,
+      name: data.name.present ? data.name.value : this.name,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      lastUsed: data.lastUsed.present ? data.lastUsed.value : this.lastUsed,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Seller(')
+          ..write('npwp: $npwp, ')
+          ..write('name: $name, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('lastUsed: $lastUsed')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(npwp, name, categoryId, lastUsed);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Seller &&
+          other.npwp == this.npwp &&
+          other.name == this.name &&
+          other.categoryId == this.categoryId &&
+          other.lastUsed == this.lastUsed);
+}
+
+class SellersCompanion extends UpdateCompanion<Seller> {
+  final Value<String> npwp;
+  final Value<String?> name;
+  final Value<int> categoryId;
+  final Value<int> lastUsed;
+  final Value<int> rowid;
+  const SellersCompanion({
+    this.npwp = const Value.absent(),
+    this.name = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.lastUsed = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SellersCompanion.insert({
+    required String npwp,
+    this.name = const Value.absent(),
+    required int categoryId,
+    required int lastUsed,
+    this.rowid = const Value.absent(),
+  }) : npwp = Value(npwp),
+       categoryId = Value(categoryId),
+       lastUsed = Value(lastUsed);
+  static Insertable<Seller> custom({
+    Expression<String>? npwp,
+    Expression<String>? name,
+    Expression<int>? categoryId,
+    Expression<int>? lastUsed,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (npwp != null) 'npwp': npwp,
+      if (name != null) 'nama': name,
+      if (categoryId != null) 'kategori_id': categoryId,
+      if (lastUsed != null) 'terakhir_dipakai': lastUsed,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SellersCompanion copyWith({
+    Value<String>? npwp,
+    Value<String?>? name,
+    Value<int>? categoryId,
+    Value<int>? lastUsed,
+    Value<int>? rowid,
+  }) {
+    return SellersCompanion(
+      npwp: npwp ?? this.npwp,
+      name: name ?? this.name,
+      categoryId: categoryId ?? this.categoryId,
+      lastUsed: lastUsed ?? this.lastUsed,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (npwp.present) {
+      map['npwp'] = Variable<String>(npwp.value);
+    }
+    if (name.present) {
+      map['nama'] = Variable<String>(name.value);
+    }
+    if (categoryId.present) {
+      map['kategori_id'] = Variable<int>(categoryId.value);
+    }
+    if (lastUsed.present) {
+      map['terakhir_dipakai'] = Variable<int>(lastUsed.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SellersCompanion(')
+          ..write('npwp: $npwp, ')
+          ..write('name: $name, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('lastUsed: $lastUsed, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $TemplatesTable templates = $TemplatesTable(this);
+  late final $SellersTable sellers = $SellersTable(this);
   late final Index idxTxOccurred = Index(
     'idx_tx_occurred',
     'CREATE INDEX idx_tx_occurred ON transactions (occurred_at)',
@@ -1456,6 +1829,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index idxTxCategory = Index(
     'idx_tx_category',
     'CREATE INDEX idx_tx_category ON transactions (category_id)',
+  );
+  late final Index idxTxNomorFaktur = Index(
+    'idx_tx_nomor_faktur',
+    'CREATE UNIQUE INDEX idx_tx_nomor_faktur ON transactions (nomor_faktur)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1465,8 +1842,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     transactions,
     templates,
+    sellers,
     idxTxOccurred,
     idxTxCategory,
+    idxTxNomorFaktur,
   ];
 }
 
@@ -1524,6 +1903,25 @@ final class $$CategoriesTableReferences
     ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_templatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SellersTable, List<Seller>> _sellersRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.sellers,
+    aliasName: 'categories__id__penjual__kategori_id',
+  );
+
+  $$SellersTableProcessedTableManager get sellersRefs {
+    final manager = $$SellersTableTableManager(
+      $_db,
+      $_db.sellers,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_sellersRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1616,6 +2014,31 @@ class $$CategoriesTableFilterComposer
           }) => $$TemplatesTableFilterComposer(
             $db: $db,
             $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> sellersRefs(
+    Expression<bool> Function($$SellersTableFilterComposer f) f,
+  ) {
+    final $$SellersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sellers,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SellersTableFilterComposer(
+            $db: $db,
+            $table: $db.sellers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1752,6 +2175,31 @@ class $$CategoriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> sellersRefs<T extends Object>(
+    Expression<T> Function($$SellersTableAnnotationComposer a) f,
+  ) {
+    final $$SellersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sellers,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SellersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sellers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CategoriesTableTableManager
@@ -1767,7 +2215,11 @@ class $$CategoriesTableTableManager
           $$CategoriesTableUpdateCompanionBuilder,
           (Category, $$CategoriesTableReferences),
           Category,
-          PrefetchHooks Function({bool transactionsRefs, bool templatesRefs})
+          PrefetchHooks Function({
+            bool transactionsRefs,
+            bool templatesRefs,
+            bool sellersRefs,
+          })
         > {
   $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
     : super(
@@ -1825,12 +2277,17 @@ class $$CategoriesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({transactionsRefs = false, templatesRefs = false}) {
+              ({
+                transactionsRefs = false,
+                templatesRefs = false,
+                sellersRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (transactionsRefs) db.transactions,
                     if (templatesRefs) db.templates,
+                    if (sellersRefs) db.sellers,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -1875,6 +2332,26 @@ class $$CategoriesTableTableManager
                           referencedColumn: 'category_id',
                           typedResults: items,
                         ),
+                      if (sellersRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Category,
+                          $CategoriesTable,
+                          Seller,
+                          $SellersTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategoriesTableReferences
+                              ._sellersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).sellersRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'kategori_id',
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -1895,7 +2372,11 @@ typedef $$CategoriesTableProcessedTableManager =
       $$CategoriesTableUpdateCompanionBuilder,
       (Category, $$CategoriesTableReferences),
       Category,
-      PrefetchHooks Function({bool transactionsRefs, bool templatesRefs})
+      PrefetchHooks Function({
+        bool transactionsRefs,
+        bool templatesRefs,
+        bool sellersRefs,
+      })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
@@ -1908,6 +2389,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       required int occurredAt,
       required int createdAt,
       required int updatedAt,
+      Value<String?> invoiceNo,
     });
 typedef $$TransactionsTableUpdateCompanionBuilder =
     TransactionsCompanion Function({
@@ -1920,6 +2402,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<int> occurredAt,
       Value<int> createdAt,
       Value<int> updatedAt,
+      Value<String?> invoiceNo,
     });
 
 final class $$TransactionsTableReferences
@@ -1991,6 +2474,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceNo => $composableBuilder(
+    column: $table.invoiceNo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2067,6 +2555,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get invoiceNo => $composableBuilder(
+    column: $table.invoiceNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2130,6 +2623,9 @@ class $$TransactionsTableAnnotationComposer
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get invoiceNo =>
+      $composableBuilder(column: $table.invoiceNo, builder: (column) => column);
+
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2191,6 +2687,7 @@ class $$TransactionsTableTableManager
                 Value<int> occurredAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
+                Value<String?> invoiceNo = const Value.absent(),
               }) => TransactionsCompanion(
                 id: id,
                 type: type,
@@ -2201,6 +2698,7 @@ class $$TransactionsTableTableManager
                 occurredAt: occurredAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                invoiceNo: invoiceNo,
               ),
           createCompanionCallback:
               ({
@@ -2213,6 +2711,7 @@ class $$TransactionsTableTableManager
                 required int occurredAt,
                 required int createdAt,
                 required int updatedAt,
+                Value<String?> invoiceNo = const Value.absent(),
               }) => TransactionsCompanion.insert(
                 id: id,
                 type: type,
@@ -2223,6 +2722,7 @@ class $$TransactionsTableTableManager
                 occurredAt: occurredAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                invoiceNo: invoiceNo,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2619,6 +3119,300 @@ typedef $$TemplatesTableProcessedTableManager =
       Template,
       PrefetchHooks Function({bool categoryId})
     >;
+typedef $$SellersTableCreateCompanionBuilder = SellersCompanion Function({
+  required String npwp,
+  Value<String?> name,
+  required int categoryId,
+  required int lastUsed,
+  Value<int> rowid,
+});
+typedef $$SellersTableUpdateCompanionBuilder = SellersCompanion Function({
+  Value<String> npwp,
+  Value<String?> name,
+  Value<int> categoryId,
+  Value<int> lastUsed,
+  Value<int> rowid,
+});
+
+final class $$SellersTableReferences
+    extends BaseReferences<_$AppDatabase, $SellersTable, Seller> {
+  $$SellersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CategoriesTable _categoryIdTable(_$AppDatabase db) =>
+      db.categories.createAlias('penjual__kategori_id__categories__id');
+
+  $$CategoriesTableProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<int>('kategori_id')!;
+
+    final manager = $$CategoriesTableTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SellersTableFilterComposer
+    extends Composer<_$AppDatabase, $SellersTable> {
+  $$SellersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get npwp => $composableBuilder(
+    column: $table.npwp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastUsed => $composableBuilder(
+    column: $table.lastUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CategoriesTableFilterComposer get categoryId {
+    final $$CategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SellersTableOrderingComposer
+    extends Composer<_$AppDatabase, $SellersTable> {
+  $$SellersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get npwp => $composableBuilder(
+    column: $table.npwp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastUsed => $composableBuilder(
+    column: $table.lastUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CategoriesTableOrderingComposer get categoryId {
+    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SellersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SellersTable> {
+  $$SellersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get npwp =>
+      $composableBuilder(column: $table.npwp, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get lastUsed =>
+      $composableBuilder(column: $table.lastUsed, builder: (column) => column);
+
+  $$CategoriesTableAnnotationComposer get categoryId {
+    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SellersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SellersTable,
+          Seller,
+          $$SellersTableFilterComposer,
+          $$SellersTableOrderingComposer,
+          $$SellersTableAnnotationComposer,
+          $$SellersTableCreateCompanionBuilder,
+          $$SellersTableUpdateCompanionBuilder,
+          (Seller, $$SellersTableReferences),
+          Seller,
+          PrefetchHooks Function({bool categoryId})
+        > {
+  $$SellersTableTableManager(_$AppDatabase db, $SellersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SellersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SellersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SellersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> npwp = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<int> categoryId = const Value.absent(),
+                Value<int> lastUsed = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SellersCompanion(
+                npwp: npwp,
+                name: name,
+                categoryId: categoryId,
+                lastUsed: lastUsed,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String npwp,
+                Value<String?> name = const Value.absent(),
+                required int categoryId,
+                required int lastUsed,
+                Value<int> rowid = const Value.absent(),
+              }) => SellersCompanion.insert(
+                npwp: npwp,
+                name: name,
+                categoryId: categoryId,
+                lastUsed: lastUsed,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SellersTable, Seller>(table),
+                  $$SellersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.categoryId,
+                        referencedTable: $$SellersTableReferences
+                            ._categoryIdTable(db),
+                        referencedColumn: $$SellersTableReferences
+                            ._categoryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SellersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SellersTable,
+      Seller,
+      $$SellersTableFilterComposer,
+      $$SellersTableOrderingComposer,
+      $$SellersTableAnnotationComposer,
+      $$SellersTableCreateCompanionBuilder,
+      $$SellersTableUpdateCompanionBuilder,
+      (Seller, $$SellersTableReferences),
+      Seller,
+      PrefetchHooks Function({bool categoryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2629,4 +3423,6 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$TemplatesTableTableManager get templates =>
       $$TemplatesTableTableManager(_db, _db.templates);
+  $$SellersTableTableManager get sellers =>
+      $$SellersTableTableManager(_db, _db.sellers);
 }

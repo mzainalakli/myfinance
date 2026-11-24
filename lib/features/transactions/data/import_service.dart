@@ -49,14 +49,27 @@ class ImportResult {
   final int skipped;
   final int failed;
   final String? backupPath;
-  const ImportResult({required this.added, required this.skipped, required this.failed, this.backupPath});
+  const ImportResult({
+    required this.added,
+    required this.skipped,
+    required this.failed,
+    this.backupPath,
+  });
 }
 
 String _catKey(TxType t, String name) => categoryKey(t, name);
 
-/// Sidik jari transaksi: waktu + jenis + nominal + mata uang + kategori + catatan.
-String _fp(int timeKey, TxType t, int minor, String cur, String cat, String note) =>
-    '$timeKey|${t.name}|$minor|$cur|${cat.trim().toLowerCase()}|${note.trim()}';
+/// Sidik jari transaksi: waktu + jenis + nominal + mata uang + kategori + catatan + nomor faktur.
+String _fp(
+  int timeKey,
+  TxType t,
+  int minor,
+  String cur,
+  String cat,
+  String note,
+  String? invoice,
+) =>
+    '$timeKey|${t.name}|$minor|$cur|${cat.trim().toLowerCase()}|${note.trim()}|${invoice ?? ''}';
 
 class ImportService {
   final AppDatabase db;
@@ -80,21 +93,71 @@ class ImportService {
       final minute = <String, List<int>>{};
       for (final r in rows) {
         final t = r.tx;
-        (exact[_fp(t.occurredAt, t.type, t.amountMinor, t.currencyCode, r.category.name, t.note)] ??= []).add(t.id);
-        (minute[_fp(t.occurredAt ~/ 60000, t.type, t.amountMinor, t.currencyCode, r.category.name, t.note)] ??= [])
+        (exact[_fp(
+                  t.occurredAt,
+                  t.type,
+                  t.amountMinor,
+                  t.currencyCode,
+                  r.category.name,
+                  t.note,
+                  t.invoiceNo,
+                )] ??=
+                [])
+            .add(t.id);
+        (minute[_fp(
+                  t.occurredAt ~/ 60000,
+                  t.type,
+                  t.amountMinor,
+                  t.currencyCode,
+                  r.category.name,
+                  t.note,
+                  t.invoiceNo,
+                )] ??=
+                [])
             .add(t.id);
       }
       final used = <int>{};
       toInsert = [];
+      // Indeks unik nomor faktur: faktur yang sudah ada di DB (atau muncul lebih dulu di berkas) dihitung duplikat,
+      // apa pun kolom lainnya, agar penulisan tidak melanggar unique index dan membatalkan seluruh impor.
+      final invoices = {
+        for (final r in rows)
+          if (r.tx.invoiceNo != null) r.tx.invoiceNo!,
+      };
       for (final rec in parsed.records) {
+        if (rec.invoiceNo != null && !invoices.add(rec.invoiceNo!)) {
+          dup++;
+          continue;
+        }
         final ms = toEpochMs(rec.occurredAt);
         final idx = rec.minutePrecision ? minute : exact;
-        final key = _fp(rec.minutePrecision ? ms ~/ 60000 : ms, rec.type, rec.amountMinor, rec.currency.code,
-            rec.category, rec.note);
+        final key = _fp(
+          rec.minutePrecision ? ms ~/ 60000 : ms,
+          rec.type,
+          rec.amountMinor,
+          rec.currency.code,
+          rec.category,
+          rec.note,
+          rec.invoiceNo,
+        );
         final list = idx[key];
-        final hit = list?.cast<int?>().firstWhere((id) => !used.contains(id), orElse: () => null);
+        final hit = list?.cast<int?>().firstWhere(
+          (id) => !used.contains(id),
+          orElse: () => null,
+        );
         if (hit != null) {
           used.add(hit);
+          dup++;
+        } else {
+          toInsert.add(rec);
+        }
+      }
+    } else if (parsed.records.isNotEmpty) {
+      // Ganti semua (DB dianggap kosong): hanya nomor faktur kembar di dalam berkas yang perlu disaring.
+      final seen = <String>{};
+      toInsert = [];
+      for (final rec in parsed.records) {
+        if (rec.invoiceNo != null && !seen.add(rec.invoiceNo!)) {
           dup++;
         } else {
           toInsert.add(rec);
@@ -129,14 +192,17 @@ class ImportService {
   }
 
   NewCategory _newCategory(TxCsvRecord r) => NewCategory(
-        r.category,
-        r.type,
-        r.icon ?? 'more',
-        r.color ?? categoryColors[r.category.hashCode.abs() % categoryColors.length],
-      );
+    r.category,
+    r.type,
+    r.icon ?? 'more',
+    r.color ??
+        categoryColors[r.category.hashCode.abs() % categoryColors.length],
+  );
 
   List<CurrencyTotal> _totals(List<TxCsvRecord> recs) {
-    final inc = <Currency, int>{}, exp = <Currency, int>{}, cnt = <Currency, int>{};
+    final inc = <Currency, int>{},
+        exp = <Currency, int>{},
+        cnt = <Currency, int>{};
     for (final r in recs) {
       cnt[r.currency] = (cnt[r.currency] ?? 0) + 1;
       final m = r.type == TxType.income ? inc : exp;
@@ -147,7 +213,9 @@ class ImportService {
         final c = cnt[b]!.compareTo(cnt[a]!);
         return c != 0 ? c : a.code.compareTo(b.code);
       });
-    return [for (final c in cs) CurrencyTotal(c, inc[c] ?? 0, exp[c] ?? 0, cnt[c]!)];
+    return [
+      for (final c in cs) CurrencyTotal(c, inc[c] ?? 0, exp[c] ?? 0, cnt[c]!),
+    ];
   }
 
   /// Cadangan ekspor data sekarang di penyimpanan privat aplikasi. Mengembalikan path berkas.
@@ -158,7 +226,8 @@ class ImportService {
     final rows = await _repo.rows(TxFilter.all);
     final n = DateTime.now();
     String two(int v) => v.toString().padLeft(2, '0');
-    final name = 'cadangan-${n.year}${two(n.month)}${two(n.day)}-${two(n.hour)}${two(n.minute)}${two(n.second)}.csv';
+    final name =
+        'cadangan-${n.year}${two(n.month)}${two(n.day)}-${two(n.hour)}${two(n.minute)}${two(n.second)}.csv';
     final f = File('${dir.path}/$name');
     await f.writeAsString(withBom(buildCsv(rows)), flush: true);
     return f.path;
@@ -182,7 +251,11 @@ class ImportService {
       final ids = {for (final c in cats) _catKey(c.type, c.name): c.id};
       final nextOrder = <TxType, int>{
         for (final t in TxType.values)
-          t: cats.where((c) => c.type == t).fold<int>(-1, (m, c) => c.sortOrder > m ? c.sortOrder : m) + 1,
+          t:
+              cats
+                  .where((c) => c.type == t)
+                  .fold<int>(-1, (m, c) => c.sortOrder > m ? c.sortOrder : m) +
+              1,
       };
       for (final r in plan.toInsert) {
         final k = _catKey(r.type, r.category);
@@ -190,13 +263,17 @@ class ImportService {
         final nc = _newCategory(r);
         final order = nextOrder[nc.type]!;
         nextOrder[nc.type] = order + 1;
-        ids[k] = await db.into(db.categories).insert(CategoriesCompanion.insert(
-              name: nc.name,
-              icon: nc.icon,
-              color: nc.color,
-              type: nc.type,
-              sortOrder: Value(order),
-            ));
+        ids[k] = await db
+            .into(db.categories)
+            .insert(
+              CategoriesCompanion.insert(
+                name: nc.name,
+                icon: nc.icon,
+                color: nc.color,
+                type: nc.type,
+                sortOrder: Value(order),
+              ),
+            );
       }
       final now = toEpochMs(DateTime.now());
       final total = plan.toInsert.length;
@@ -215,11 +292,15 @@ class ImportService {
                 occurredAt: toEpochMs(r.occurredAt),
                 createdAt: now,
                 updatedAt: now,
+                invoiceNo: Value(r.invoiceNo),
               ),
             );
           }
         });
-        onProgress?.call(i + part.length > total ? total : i + part.length, total);
+        onProgress?.call(
+          i + part.length > total ? total : i + part.length,
+          total,
+        );
       }
     });
 

@@ -20,6 +20,14 @@ class CategoryException implements Exception {
   String toString() => 'CategoryException($error)';
 }
 
+/// Faktur dengan nomor ini sudah tercatat ([existing]).
+class DuplicateInvoiceException implements Exception {
+  final Transaction existing;
+  const DuplicateInvoiceException(this.existing);
+  @override
+  String toString() => 'DuplicateInvoiceException(${existing.invoiceNo})';
+}
+
 class DeletedCategory {
   final Category category;
   final List<Template> templates;
@@ -75,6 +83,8 @@ class Repository {
   Future<List<TxRow>> rows(TxFilter f, {DateTime? now}) async =>
       (await _rowsQuery(f, now ?? DateTime.now()).get()).map(_toRow).toList();
 
+  /// [invoiceNo]: nomor faktur elektronik (unik). [sellerNpwp]: bila diberikan, ingatan penjual diperbarui
+  /// dalam transaksi DB yang sama (kategori terakhir dipakai; nama hanya bila masih kosong dan [note] tidak kosong).
   Future<int> addTransaction({
     required TxType type,
     required Money money,
@@ -82,18 +92,64 @@ class Repository {
     String note = '',
     DateTime? occurredAt,
     DateTime? now,
-  }) {
-    final n = toEpochMs(now ?? DateTime.now());
-    return db.into(db.transactions).insert(TransactionsCompanion.insert(
-          type: type,
-          amountMinor: money.minor,
-          currencyCode: money.currency.code,
-          categoryId: categoryId,
-          note: Value(note.trim()),
-          occurredAt: occurredAt == null ? n : toEpochMs(occurredAt),
-          createdAt: n,
-          updatedAt: n,
-        ));
+    String? invoiceNo,
+    String? sellerNpwp,
+  }) =>
+      db.transaction(() async {
+        final nowDt = now ?? DateTime.now();
+        final n = toEpochMs(nowDt);
+        if (invoiceNo != null) {
+          final dup = await findByInvoice(invoiceNo);
+          if (dup != null) throw DuplicateInvoiceException(dup);
+        }
+        final id = await db.into(db.transactions).insert(TransactionsCompanion.insert(
+              type: type,
+              amountMinor: money.minor,
+              currencyCode: money.currency.code,
+              categoryId: categoryId,
+              note: Value(note.trim()),
+              occurredAt: occurredAt == null ? n : toEpochMs(occurredAt),
+              createdAt: n,
+              updatedAt: n,
+              invoiceNo: Value(invoiceNo),
+            ));
+        if (sellerNpwp != null) await _upsertSeller(sellerNpwp, categoryId, note.trim(), n);
+        return id;
+      });
+
+  Future<Transaction?> findByInvoice(String invoiceNo) =>
+      (db.select(db.transactions)..where((t) => t.invoiceNo.equals(invoiceNo))).getSingleOrNull();
+
+  // ---------- penjual (ingatan faktur) ----------
+
+  Future<Seller?> sellerFor(String npwp) =>
+      (db.select(db.sellers)..where((s) => s.npwp.equals(npwp))).getSingleOrNull();
+
+  /// Kategori yang diingat untuk penjual ini, hanya bila masih ada, aktif, dan berjenis pengeluaran.
+  Future<Category?> rememberedCategory(String npwp) async {
+    final s = await sellerFor(npwp);
+    if (s == null) return null;
+    final c = await (db.select(db.categories)..where((c) => c.id.equals(s.categoryId))).getSingleOrNull();
+    return (c == null || c.isArchived || c.type != TxType.expense) ? null : c;
+  }
+
+  Future<void> _upsertSeller(String npwp, int categoryId, String note, int nowMs) async {
+    final cur = await sellerFor(npwp);
+    if (cur == null) {
+      await db.into(db.sellers).insert(SellersCompanion.insert(
+            npwp: npwp,
+            name: Value(note.isEmpty ? null : note),
+            categoryId: categoryId,
+            lastUsed: nowMs,
+          ));
+    } else {
+      final keepName = cur.name != null && cur.name!.isNotEmpty;
+      await (db.update(db.sellers)..where((s) => s.npwp.equals(npwp))).write(SellersCompanion(
+        categoryId: Value(categoryId),
+        lastUsed: Value(nowMs),
+        name: keepName || note.isEmpty ? const Value.absent() : Value(note),
+      ));
+    }
   }
 
   Future<void> updateTransaction(
@@ -286,6 +342,8 @@ class Repository {
         await _ensureNotLast(c);
         final tpls = await (db.select(db.templates)..where((t) => t.categoryId.equals(id))).get();
         await (db.delete(db.templates)..where((t) => t.categoryId.equals(id))).go();
+        // ingatan penjual yang menunjuk kategori ini ikut dilupakan (kategori sudah tak ada)
+        await (db.delete(db.sellers)..where((x) => x.categoryId.equals(id))).go();
         await (db.delete(db.categories)..where((x) => x.id.equals(id))).go();
         return DeletedCategory(c, tpls);
       });
@@ -311,6 +369,8 @@ class Repository {
             .write(TransactionsCompanion(categoryId: Value(targetId)));
         await (db.update(db.templates)..where((t) => t.categoryId.equals(id)))
             .write(TemplatesCompanion(categoryId: Value(targetId)));
+        await (db.update(db.sellers)..where((t) => t.categoryId.equals(id)))
+            .write(SellersCompanion(categoryId: Value(targetId)));
         if (debugFailAfterMove != null) await debugFailAfterMove();
         await (db.delete(db.categories)..where((x) => x.id.equals(id))).go();
         return moved;

@@ -13,6 +13,8 @@ enum TxType { income, expense }
 
 @TableIndex(name: 'idx_tx_occurred', columns: {#occurredAt})
 @TableIndex(name: 'idx_tx_category', columns: {#categoryId})
+// Nomor faktur unik (NULL boleh banyak): satu faktur tidak bisa tercatat dua kali.
+@TableIndex(name: 'idx_tx_nomor_faktur', columns: {#invoiceNo}, unique: true)
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get type => textEnum<TxType>()();
@@ -25,6 +27,8 @@ class Transactions extends Table {
   IntColumn get occurredAt => integer()();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
+  /// Nomor faktur elektronik Taiwan (mis. HB35094463), NULL untuk catatan biasa.
+  TextColumn get invoiceNo => text().named('nomor_faktur').nullable()();
 }
 
 class Categories extends Table {
@@ -46,12 +50,25 @@ class Templates extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
-@DriftDatabase(tables: [Transactions, Categories, Templates])
+/// Ingatan lokal "penjual (NPWP 8 digit) biasanya masuk kategori apa". QR faktur tidak memuat nama toko.
+@DataClassName('Seller')
+class Sellers extends Table {
+  @override
+  String get tableName => 'penjual';
+  TextColumn get npwp => text().withLength(min: 8, max: 8)();
+  TextColumn get name => text().named('nama').nullable()();
+  IntColumn get categoryId => integer().named('kategori_id').references(Categories, #id)();
+  IntColumn get lastUsed => integer().named('terakhir_dipakai')();
+  @override
+  Set<Column> get primaryKey => {npwp};
+}
+
+@DriftDatabase(tables: [Transactions, Categories, Templates, Sellers])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// Naikkan angka ini dan tambah langkah di [onUpgrade] untuk setiap perubahan skema.
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   @override
   int get schemaVersion => currentVersion;
@@ -63,8 +80,13 @@ class AppDatabase extends _$AppDatabase {
           await _seedCategories();
         },
         onUpgrade: (m, from, to) async {
-          // v1 -> v2 dst. ditambahkan di sini, berurutan:
-          // if (from < 2) { await m.addColumn(...); }
+          // Langkah bertingkat berurutan; tidak pernah menghapus data.
+          if (from < 2) {
+            // v2: faktur elektronik (nomor faktur unik + ingatan penjual).
+            await m.addColumn(transactions, transactions.invoiceNo);
+            await m.createIndex(idxTxNomorFaktur);
+            await m.createTable(sellers);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -103,6 +125,7 @@ class AppDatabase extends _$AppDatabase {
         const TableUpdate('transactions'),
         const TableUpdate('categories'),
         const TableUpdate('templates'),
+        const TableUpdate('penjual'),
       });
 }
 
