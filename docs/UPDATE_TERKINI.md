@@ -1,6 +1,6 @@
 # Update terkini: MyFinance
 
-> **Perbaikan #1 (3 commit)** dicatat di bagian "Perbaikan #1" di bawah; **Perbaikan #2 (kategori + FAB)** di bagian "Perbaikan #2".
+> **Perbaikan #1 (3 commit)** dicatat di bagian "Perbaikan #1" di bawah; **Perbaikan #2 (kategori + FAB)** di bagian "Perbaikan #2"; **Fitur scan faktur Taiwan** di bagian terakhir.
 
 Ringkasan kondisi aplikasi saat dokumen ini ditulis (18 Nov 2026).
 Dokumen lain: `RILIS.md` (rilis APK), `GANTI_NAMA.md` (ganti nama tampilan), `../DECISIONS.md` (keputusan desain).
@@ -130,3 +130,18 @@ Tabel `templates` sudah ada di skema.
 **Belum diverifikasi di HP**: tampilan nyata FAB dan filter (jarak, animasi susut), gestur drag urutan kategori dan swipe,
 tampilan sheet hapus/arsip di layar kecil, snackbar Urungkan di atas FAB, perilaku FAB dengan keyboard sungguhan dan
 navigasi gestur vs 3 tombol. Tes widget memakai tata letak simulasi, bukan perangkat.
+
+## Fitur scan faktur elektronik Taiwan
+
+Parser QR kiri (murni, teruji), skema DB v2 (migrasi teruji dari v1), layar scan (`mobile_scanner`, ML Kit bundel), pengisian form otomatis,
+ingatan penjual per NPWP, deteksi duplikat, kolom CSV `no_faktur`. Rincian dan alasan: `DECISIONS.md` ("Scan faktur elektronik Taiwan").
+
+Terverifikasi: `flutter analyze` bersih; tes (parser 20, DB/migrasi/CSV 13, widget scan 15) lulus di TZ=UTC dan Asia/Makassar;
+APK rilis (3 ABI) dibangun, manifest hasil merge **CAMERA ada, INTERNET tidak ada** (`bash tool/cek_izin.sh`; juga dicek di CI);
+APK +5 sampai +8 MB.
+
+**Belum diverifikasi di HP** (semua tes memakai pemindai palsu, bukan kamera): pembacaan QR sungguhan dari struk 7-ELEVEN (fokus, cahaya,
+struk kusut), senter, dialog izin kamera Android dan alur "ditolak permanen -> Buka pengaturan" (MethodChannel `app.myfinance/settings`),
+getar, tampilan layar scan di layar kecil/gelap, target "kurang dari 5 detik", dan bahwa ML Kit bundel berjalan tanpa internet
+(secara konfigurasi benar, belum dicoba mode pesawat). **Tidak dikerjakan**: shortcut/widget ke layar scan (langkah 6, alasan di DECISIONS.md);
+langkah CI hanya diperluas (syarat CAMERA) dan belum pernah berjalan di GitHub. Belum di-push, jadi belum ada rilis dengan fitur ini.

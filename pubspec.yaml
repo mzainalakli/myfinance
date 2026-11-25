@@ -48,8 +48,6 @@ dependencies:
     sdk: flutter
   file_picker: ^13.4.0
   mobile_scanner: ^7.5.0
-  permission_handler: ^13.0.2
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

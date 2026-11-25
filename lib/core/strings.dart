@@ -137,4 +137,31 @@ class S {
   static const fileError = 'Berkas tidak bisa diimpor';
   static const readFail = 'Berkas tidak bisa dibaca.';
   static const moreErrors = 'dan lainnya tidak ditampilkan';
+
+  // ---- scan faktur ----
+  static const scanInvoice = 'Scan faktur';
+  static const scanHintPre = 'Arahkan ke QR ';
+  static const scanHintLeft = 'kiri';
+  static const scanHintPost = ' pada struk';
+  static const scanTorch = 'Senter';
+  static const scanClose = 'Tutup';
+  static const scanErrRight = 'Ini QR kanan. Scan QR yang di sebelah kiri.';
+  static const scanErrNotInvoice = 'QR ini bukan faktur elektronik Taiwan.';
+  static const scanErrBroken = 'QR faktur terbaca tetapi isinya rusak. Coba lagi dengan cahaya lebih terang.';
+  static const scanDupTitle = 'Faktur sudah dicatat';
+  static String scanDupBody(String date) => 'Faktur ini sudah dicatat pada $date.';
+  static const scanSeeRecord = 'Lihat catatan';
+  static const camDeniedTitle = 'Izin kamera diperlukan';
+  static const camDeniedBody =
+      'Kamera dipakai hanya untuk membaca QR faktur, di perangkat ini saja (tanpa internet). '
+      'Anda tetap bisa mencatat secara manual.';
+  static const camUnsupported = 'Kamera tidak tersedia di perangkat ini. Catat secara manual.';
+  static const camError = 'Kamera tidak bisa dibuka. Coba lagi atau catat secara manual.';
+  static const openSettings = 'Buka pengaturan';
+  static const camRetry = 'Coba lagi';
+  static const recordManually = 'Catat manual';
+  static const invoiceChip = 'Faktur';
+  static const pickCategory = 'Pilih kategori';
+  static const invoiceTooBig = 'Total faktur terlalu besar untuk dicatat.';
+  static const invoiceDuplicateSave = 'Faktur ini sudah dicatat.';
 }

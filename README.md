@@ -18,6 +18,12 @@ Catatan: bila sebelumnya memasang APK debug/uji, aplikasi itu harus di-uninstall
 
 - **Catat**: tombol **Catat** (kanan bawah), atau widget layar utama (**+ Keluar / + Masuk**),
   atau tekan lama ikon aplikasi. Pilih kategori, ketik nominal di numpad, **Simpan**.
+- **Scan faktur Taiwan (電子發票)**: di sheet Catat (jenis Keluar) ketuk ikon **pemindai QR** di samping chip mata uang →
+  arahkan kamera ke **QR kiri** struk (QR kanan hanya lanjutan daftar barang) → nominal (TWD), tanggal, dan kategori/catatan
+  terisi → pilih kategori bila toko belum dikenal → **Simpan**. Toko dikenali dari NPWP penjual (8 digit) yang diingat
+  secara lokal; scan faktur yang sama dua kali ditolak (ada pilihan *Lihat catatan*). Batasan: nama toko tidak ada di QR,
+  nama barang berencoding Big5 tidak didekode (catatan dikosongkan), jam transaksi tidak ada di QR (tanggal hari ini memakai
+  jam sekarang, tanggal lain pukul 12:00). Butuh izin **kamera** (diminta saat pertama dipakai); aplikasi tetap tanpa internet.
 - **Riwayat**: dikelompokkan per hari. Geser ke kanan untuk ubah, ke kiri untuk hapus (bisa diurungkan).
   Chip periode dan tombol filter menempel di bawah judul (di luar jalur tombol Catat). Ikon bagikan di atas mengekspor CSV sesuai filter.
 - **Statistik**: donat per kategori, batang per bulan, tren selisih. Mengikuti filter yang sama; per satu mata uang.

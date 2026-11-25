@@ -1,4 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Kamera hanya untuk scan QR faktur, tanpa INTERNET. required=false: perangkat tanpa kamera tetap bisa memasang. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Aplikasi ini TIDAK memakai internet. Pustaka telemetri Google (transport-backend-cct, dibawa ML Kit) menambahkan
+         INTERNET lewat merge; dibuang di sini. Dijaga oleh langkah CI dan tool/cek_izin.sh. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"

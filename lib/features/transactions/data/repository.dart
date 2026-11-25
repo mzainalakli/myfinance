@@ -117,6 +117,15 @@ class Repository {
         return id;
       });
 
+  Future<TxRow?> rowById(int id) async {
+    final r = await (db.select(db.transactions).join([
+      innerJoin(db.categories, db.categories.id.equalsExp(db.transactions.categoryId)),
+    ])
+          ..where(db.transactions.id.equals(id)))
+        .getSingleOrNull();
+    return r == null ? null : _toRow(r);
+  }
+
   Future<Transaction?> findByInvoice(String invoiceNo) =>
       (db.select(db.transactions)..where((t) => t.invoiceNo.equals(invoiceNo))).getSingleOrNull();
 

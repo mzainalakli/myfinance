@@ -94,3 +94,39 @@
   tambahan dan baris kedua terdorong ke jalur FAB (tinggi daftar bergantung pada jam dan zona waktu mesin, tidak pernah gagal di
   WIB lokal). Perbaikan: data uji kini terikat ke tengah hari lokal (data sedikit = satu hari), jadi deterministik. Assertion tidak
   dilonggarkan. Tes kinerja tidak gagal di CI (parse 115 ms vs batas 3000 ms, dst.; margin sudah >10x), jadi batasnya tidak diubah.
+- **Scan faktur elektronik Taiwan**. *Parser* (`features/scan_faktur/faktur_parser.dart`) murni dan tidak melempar; hasil `FakturOk`/`FakturGagal`
+  (`bukanFaktur`, `qrKananTerdeteksi`, `formatRusak`). Pembeda: diawali `**` = QR kanan; tidak berawalan "2 huruf + 8 digit + 7 digit tanggal" = bukan
+  faktur (URL, teks); berawalan faktur tetapi cacat (terpotong, tanggal/hex/NPWP salah, total 0) = rusak (pesan "coba lagi"). Huruf kecil pada nomor
+  faktur dinormalkan ke huruf besar (bukan ditolak). Tahun Minguo + 1911, tanggal harus nyata di kalender. Barang: encoding 1 (UTF-8) dan 2 (Base64);
+  0 (Big5) dilewati tanpa dependensi baru; kegagalan barang hanya mengosongkan daftar. Total yang dicatat = kolom total (posisi 29-36).
+  *Paket*: `mobile_scanner` ^7.5 (ML Kit **bundel**: default paket, properti `dev.steenbakker.mobile_scanner.useUnbundled` tidak diset; terverifikasi di
+  README paket dan `build.gradle.kts` plugin yang memakai `com.google.mlkit:barcode-scanning`, bukan `play-services-*`). Dicoba `permission_handler`
+  untuk "Buka pengaturan" tetapi v13 memaksa compileSdk 37 (gagal di AGP 9.1/compileSdk 36), jadi dibuang; diganti `MethodChannel` kecil
+  `app.myfinance/settings` di `MainActivity` (membuka `ACTION_APPLICATION_DETAILS_SETTINGS`). Izin kamera diminta oleh plugin saat layar scan pertama
+  dibuka (bukan saat aplikasi dibuka); ditolak -> `CameraProblemView` (penjelasan, Buka pengaturan, Coba lagi, Catat manual).
+  *Penyimpanan*: skema v2 lewat `onUpgrade` bertingkat (`from < 2`: tambah kolom `nomor_faktur`, indeks unik `idx_tx_nomor_faktur`, tabel `penjual`).
+  Nama SQL mengikuti spesifikasi (`nomor_faktur`, `penjual`, `nama`, `kategori_id`, `terakhir_dipakai`) sedangkan nama Dart tetap Inggris
+  (`invoiceNo`, `Sellers`/`Seller`). Cek duplikat dua lapis: pra-cek di transaksi DB (`DuplicateInvoiceException`) + indeks unik sebagai jaring pengaman.
+  Simpan transaksi + upsert penjual satu transaksi DB. Rujukan `penjual.kategori_id` dijaga saat kategori dihapus (baris penjual dibuang) atau dipindah
+  (ikut dipindah); kategori terarsip atau bukan pengeluaran tidak dipakai sebagai tebakan.
+  *`penjual.nama`*: diisi dari catatan hanya bila masih kosong dan catatan tidak kosong; tidak pernah menimpa nama yang sudah ada.
+  *Jam transaksi*: tidak ada di QR; tanggal faktur = hari ini -> jam sekarang, selain itu 12:00 lokal (aturan yang sama dengan pencatatan manual).
+  *Form*: Keluar, TWD, nominal = total x 10^desimal TWD dari tabel ISO bundel (2), semua tetap bisa diedit. Penjual tak dikenal -> kategori sengaja kosong
+  (`awaitingCategory`), area kategori disorot, Simpan nonaktif sampai memilih. Chip faktur bisa dilepas; ganti ke Masuk melepas faktur.
+  Tombol scan: ikon di baris nominal (dekat chip mata uang), hanya jenis Keluar + catat baru + aplikasi utama (tidak di popup widget, kamera di popup rawan).
+  Jalur: FAB -> ikon scan -> Simpan = 3 ketukan untuk toko dikenal. Faktur duplikat: dialog + *Lihat catatan* (membuka sheet ubah) / Batal (tetap memindai).
+  *CSV*: kolom opsional `no_faktur` di akhir; berkas lama tanpa kolom tetap terbaca. Nomor faktur ikut sidik jari multiset; selain itu faktur yang
+  sudah ada di DB atau muncul lebih dulu di berkas dihitung duplikat apa pun kolom lainnya (supaya indeks unik tidak membatalkan seluruh impor), juga di
+  mode Ganti semua. Tabel `penjual` **tidak** masuk CSV: ia ingatan lokal turunan (bisa terbentuk lagi dari scan), bukan data transaksi; pemulihan di HP
+  baru memulihkan transaksi, ingatan toko terbentuk lagi seiring scan. *Jalan pintas (langkah 6)*: dilewati. Shortcut/widget ke rute scan butuh
+  deep-link (intent-filter terekspor) atau ekstra intent ke `MainActivity` dan tidak bisa saya verifikasi tanpa perangkat; risikonya lebih besar dari
+  manfaatnya. *Izin*: CAMERA + `uses-feature camera required=false` dideklarasikan di manifest aplikasi (plugin juga menambahkan yang sama).
+  CI sudah memeriksa APK rilis dengan `aapt2 dump permissions` (gagal bila ada INTERNET); ditambah syarat CAMERA ada. Skrip lokal: `tool/cek_izin.sh`.
+  *Hasil cek izin (APK rilis, manifest hasil merge, `aapt2 dump permissions`)*: pertama kali **INTERNET muncul**: dibawa
+  `com.google.android.datatransport:transport-backend-cct:2.3.3` (telemetri, dependensi ML Kit; terlacak di
+  `build/app/outputs/logs/manifest-merger-release-report.txt`). Dibuang dengan `<uses-permission INTERNET tools:node="remove"/>` di manifest aplikasi;
+  build ulang: CAMERA ada, INTERNET tidak ada, di ketiga APK, `uses-feature camera required=false`. Efek samping yang diinginkan: telemetri ML Kit tidak
+  bisa mengirim. Peringatan: setiap pembaruan paket bisa membawa izin baru lagi, karena itu CI memeriksa tiap rilis.
+  *Selisih ukuran APK rilis* (v1.0.0.5 -> dengan scan; ML Kit bundel + CameraX): arm64-v8a 24,41 -> 31,32 MB (+6,9 MB), armeabi-v7a 22,11 -> 27,34 MB
+  (+5,2 MB), x86_64 25,92 -> 33,84 MB (+7,9 MB). Sesuai perkiraan paket (3-10 MB); mode unbundled (+0,6 MB) ditolak karena butuh unduhan lewat Play Services
+  (tidak offline). Belum dicari penghematan lain.

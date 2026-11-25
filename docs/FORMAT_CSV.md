@@ -8,7 +8,7 @@ modul yang sama, jadi tidak mungkin berbeda diam-diam. Tes: `test/transaction_cs
 Berkas UTF-8 **dengan BOM**, akhir baris `\r\n`, pemisah koma, header di baris pertama:
 
 ```
-Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna
+Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna,no_faktur
 2026-11-18T08:05:07.123+07:00,Keluar,Makan & Minum,18000,IDR,Kopi,restaurant,#EF6C00
 2026-11-01T09:00:00.000+07:00,Masuk,Gaji,1500.00,USD,"Bonus, ""tahunan""",salary,#43A047
 ```
@@ -21,6 +21,7 @@ Tanggal,Jenis,Kategori,Nominal,Mata uang,Catatan,Ikon,Warna
 | `Nominal` | desimal bertitik, tanpa pemisah ribuan, tepat sebanyak desimal mata uang (IDR/JPY 0, USD 2, KWD 3), tidak pernah dibulatkan; selalu > 0 |
 | `Mata uang` | kode ISO 4217 (harus ada di daftar bawaan) |
 | `Catatan` | teks bebas, boleh berisi koma, kutip, baris baru, emoji |
+| `no_faktur` | opsional: nomor faktur elektronik Taiwan (mis. `HB35094463`, huruf besar tanpa strip). Berkas lama tanpa kolom ini tetap terbaca. Nomor yang sudah ada di data (atau muncul lebih dulu di berkas) dihitung duplikat |
 | `Ikon`, `Warna` | opsional: kunci ikon kategori dan `#RRGGBB`. Dipakai hanya bila kategori baru dibuat |
 
 Kutip & escape: kolom berisi `"`, `,` atau baris baru dikutip dengan `"…"`; `"` ditulis `""`.

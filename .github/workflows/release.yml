@@ -126,7 +126,13 @@ jobs:
             if "$AAPT2" dump permissions "$apk" | grep -q "android.permission.INTERNET"; then
               echo "::error::APK meminta izin INTERNET."; exit 1
             fi
-            echo "OK: tanda tangan rilis, package $pkg, tanpa INTERNET"
+            perms=$("$AAPT2" dump permissions "$apk")
+            echo "$perms"
+            # Satu-satunya izin yang disengaja untuk fitur scan faktur: CAMERA (lihat tool/cek_izin.sh).
+            if ! echo "$perms" | grep -q "android.permission.CAMERA"; then
+              echo "::error::APK tidak memuat izin CAMERA (fitur scan faktur)."; exit 1
+            fi
+            echo "OK: tanda tangan rilis, package $pkg, tanpa INTERNET, ada CAMERA"
           done
 
       - name: Ganti nama APK
