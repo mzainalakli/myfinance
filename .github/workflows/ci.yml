@@ -1,0 +1,38 @@
+name: CI (analyze + test)
+
+# Pemeriksaan tanpa rilis: berjalan di branch selain main dan pada pull request,
+# sehingga perubahan bisa dibuktikan hijau SEBELUM digabung ke main (yang memicu rilis).
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.6'   # samakan dengan release.yml
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
