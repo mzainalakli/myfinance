@@ -363,6 +363,7 @@ class _ImportPageState extends ConsumerState<ImportPage> {
     const maxShown = 200;
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       constraints: const BoxConstraints(maxWidth: 560),

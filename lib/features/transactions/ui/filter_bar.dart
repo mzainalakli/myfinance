@@ -73,6 +73,7 @@ class FilterBar extends ConsumerWidget {
 
 Future<void> showFilterSheet(BuildContext context) => showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       constraints: const BoxConstraints(maxWidth: 560),

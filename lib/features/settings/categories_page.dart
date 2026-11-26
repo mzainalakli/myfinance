@@ -46,6 +46,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   Future<void> _edit(Category? c, {TxType type = TxType.expense}) =>
       showModalBottomSheet<void>(
         context: context,
+        useRootNavigator: true,
         isScrollControlled: true,
         useSafeArea: true,
         constraints: const BoxConstraints(maxWidth: 560),
@@ -74,6 +75,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     if (!mounted) return;
     final choice = await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       useSafeArea: true,
       constraints: const BoxConstraints(maxWidth: 560),
       builder: (_) => _DeleteChoiceSheet(category: c, count: count),
@@ -97,6 +99,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
           .toList();
       final target = await showModalBottomSheet<Category>(
         context: context,
+        useRootNavigator: true,
         useSafeArea: true,
         isScrollControlled: true,
         constraints: const BoxConstraints(maxWidth: 560),

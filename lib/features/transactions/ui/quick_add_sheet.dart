@@ -25,6 +25,7 @@ import 'pickers.dart';
 Future<void> showQuickAddSheet(BuildContext context, {TxType? type, TxRow? editing}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     constraints: const BoxConstraints(maxWidth: 560),

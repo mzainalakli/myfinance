@@ -9,6 +9,7 @@ import '../../../core/theme/tokens.dart';
 Future<Currency?> showCurrencyPicker(BuildContext context, {String? selected, Iterable<String> pinned = const []}) {
   return showModalBottomSheet<Currency>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     constraints: const BoxConstraints(maxWidth: 560),

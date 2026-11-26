@@ -130,3 +130,10 @@
   *Selisih ukuran APK rilis* (v1.0.0.5 -> dengan scan; ML Kit bundel + CameraX): arm64-v8a 24,41 -> 31,32 MB (+6,9 MB), armeabi-v7a 22,11 -> 27,34 MB
   (+5,2 MB), x86_64 25,92 -> 33,84 MB (+7,9 MB). Sesuai perkiraan paket (3-10 MB); mode unbundled (+0,6 MB) ditolak karena butuh unduhan lewat Play Services
   (tidak offline). Belum dicari penghematan lain.
+
+- **Sheet/dialog selalu di Navigator akar** (perbaikan FAB menimpa numpad). Penyebab: `showModalBottomSheet` bawaan `useRootNavigator: false`, dan halaman tab
+  berada di Navigator cabang `StatefulShellBranch` (hanya seluas isi tab). Sheet yang dibuka dari Riwayat/Beranda/Filter jadi terjebak di area tab, sementara FAB
+  dan `NavigationBar` milik `AppShell` tetap tergambar dan bisa diketuk di atasnya (menutupi tombol hapus numpad). Hanya jalur tombol FAB yang benar karena
+  memakai context `AppShell`. Aturan: semua `showModalBottomSheet` memakai `useRootNavigator: true` (7 titik); `showDialog`/`showDatePicker` sudah akar secara bawaan.
+  Tes `test/sheet_covers_fab_test.dart` memakai `buildRouter()` sungguhan dan gagal di kode lama (diverifikasi di CI branch sebelum perbaikan).
+  CI baru `.github/workflows/ci.yml` menjalankan analyze + test di branch selain `main` (tanpa rilis) supaya perubahan terbukti hijau sebelum digabung.
